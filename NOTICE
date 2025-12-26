@@ -1,0 +1,70 @@
+MCP Toolkit
+Copyright 2024 MCP Toolkit Authors
+
+This product includes software developed at
+The MCP Toolkit Project (https://github.com/shibingli/mcp-toolkit).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+
+This project uses the following third-party libraries:
+
+--------------------------------------------------------------------------------
+Model Context Protocol Go SDK
+https://github.com/modelcontextprotocol/go-sdk
+Licensed under the MIT License
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Sonic - A blazingly fast JSON serializing & deserializing library
+https://github.com/bytedance/sonic
+Copyright 2021 ByteDance Inc.
+Licensed under the Apache License, Version 2.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+go-json - Fast JSON encoder/decoder compatible with encoding/json
+https://github.com/goccy/go-json
+Copyright 2020 Masaaki Goshima
+Licensed under the MIT License
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+jsoniter - A high-performance 100% compatible drop-in replacement of "encoding/json"
+https://github.com/json-iterator/go
+Copyright 2016 json-iterator
+Licensed under the MIT License
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Zap - Blazing fast, structured, leveled logging in Go
+https://github.com/uber-go/zap
+Copyright 2016-2017 Uber Technologies, Inc.
+Licensed under the MIT License
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Testify - A toolkit with common assertions and mocks
+https://github.com/stretchr/testify
+Copyright 2012-2020 Mat Ryer, Tyler Bunnell and contributors
+Licensed under the MIT License
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+UUID - A Go package for UUIDs based on RFC 4122 and DCE 1.1
+https://github.com/google/uuid
+Copyright 2016 Google Inc.
+Licensed under the BSD 3-Clause License
+--------------------------------------------------------------------------------
+
