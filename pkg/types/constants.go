@@ -62,6 +62,9 @@ const (
 	// ErrInvalidCommand 无效命令错误 / Invalid command error
 	ErrInvalidCommand = "invalid command"
 
+	// ErrPathRequired 路径必填错误 / Path required error
+	ErrPathRequired = "path is required"
+
 	// MsgSuccess 成功消息 / Success message
 	MsgSuccess = "operation completed successfully"
 

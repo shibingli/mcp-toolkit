@@ -275,6 +275,86 @@ func (s *Service) Delete(req *types.DeleteRequest) (*types.OperationResponse, er
 	}, nil
 }
 
+// DeleteFile 删除文件（仅限文件，不能删除目录）/ Delete file only (not directory)
+func (s *Service) DeleteFile(req *types.DeleteFileRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Path == "" {
+		return nil, errors.New(types.ErrPathRequired)
+	}
+
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查是否为文件 / Check if it's a file
+	info, err := os.Stat(validPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+
+	if info.IsDir() {
+		return nil, errors.New("path is a directory, use delete_directory instead")
+	}
+
+	if err = os.Remove(validPath); err != nil {
+		return nil, fmt.Errorf("failed to delete file: %w", err)
+	}
+
+	s.logger.Info("file deleted", zap.String("path", validPath))
+	return &types.OperationResponse{
+		Success: true,
+		Message: types.MsgFileDeleted,
+	}, nil
+}
+
+// DeleteDirectory 删除目录（仅限目录，不能删除文件）/ Delete directory only (not file)
+func (s *Service) DeleteDirectory(req *types.DeleteDirectoryRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Path == "" {
+		return nil, errors.New(types.ErrPathRequired)
+	}
+
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查是否为目录 / Check if it's a directory
+	info, err := os.Stat(validPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		return nil, errors.New("path is a file, use delete_file instead")
+	}
+
+	// 默认递归删除 / Default to recursive delete
+	if req.Recursive {
+		if err = os.RemoveAll(validPath); err != nil {
+			return nil, fmt.Errorf("failed to delete directory: %w", err)
+		}
+	} else {
+		// 非递归删除，只能删除空目录 / Non-recursive delete, can only delete empty directory
+		if err = os.Remove(validPath); err != nil {
+			return nil, fmt.Errorf("failed to delete directory (directory may not be empty, use recursive=true): %w", err)
+		}
+	}
+
+	s.logger.Info("directory deleted", zap.String("path", validPath), zap.Bool("recursive", req.Recursive))
+	return &types.OperationResponse{
+		Success: true,
+		Message: "directory deleted successfully",
+	}, nil
+}
+
 // Copy 复制文件或目录 / Copy file or directory
 func (s *Service) Copy(req *types.CopyRequest) (*types.OperationResponse, error) {
 	// 参数验证 / Parameter validation
@@ -317,6 +397,88 @@ func (s *Service) Copy(req *types.CopyRequest) (*types.OperationResponse, error)
 	return &types.OperationResponse{
 		Success: true,
 		Message: types.MsgFileCopied,
+	}, nil
+}
+
+// CopyFile 复制文件（仅限文件）/ Copy file only
+func (s *Service) CopyFile(req *types.CopyFileRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Source == "" || req.Destination == "" {
+		return nil, errors.New("source and destination are required")
+	}
+
+	srcPath, err := s.validatePath(req.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	dstPath, err := s.validatePath(req.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查源是否为文件 / Check if source is a file
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	if srcInfo.IsDir() {
+		return nil, errors.New("source is a directory, use copy_directory instead")
+	}
+
+	if err = s.copyFile(srcPath, dstPath); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("file copied", zap.String("source", srcPath), zap.String("destination", dstPath))
+	return &types.OperationResponse{
+		Success: true,
+		Message: types.MsgFileCopied,
+	}, nil
+}
+
+// CopyDirectory 复制目录（仅限目录）/ Copy directory only
+func (s *Service) CopyDirectory(req *types.CopyDirectoryRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Source == "" || req.Destination == "" {
+		return nil, errors.New("source and destination are required")
+	}
+
+	srcPath, err := s.validatePath(req.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	dstPath, err := s.validatePath(req.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查源是否为目录 / Check if source is a directory
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	if !srcInfo.IsDir() {
+		return nil, errors.New("source is a file, use copy_file instead")
+	}
+
+	if err = s.copyDir(srcPath, dstPath); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("directory copied", zap.String("source", srcPath), zap.String("destination", dstPath))
+	return &types.OperationResponse{
+		Success: true,
+		Message: "directory copied successfully",
 	}, nil
 }
 
@@ -418,6 +580,100 @@ func (s *Service) Move(req *types.MoveRequest) (*types.OperationResponse, error)
 	return &types.OperationResponse{
 		Success: true,
 		Message: types.MsgFileMoved,
+	}, nil
+}
+
+// MoveFile 移动文件（仅限文件）/ Move file only
+func (s *Service) MoveFile(req *types.MoveFileRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Source == "" || req.Destination == "" {
+		return nil, errors.New("source and destination are required")
+	}
+
+	srcPath, err := s.validatePath(req.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	dstPath, err := s.validatePath(req.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查源是否为文件 / Check if source is a file
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	if srcInfo.IsDir() {
+		return nil, errors.New("source is a directory, use move_directory instead")
+	}
+
+	// 确保目标目录存在 / Ensure destination directory exists
+	dstDir := filepath.Dir(dstPath)
+	if err = os.MkdirAll(dstDir, DefaultDirPerm); err != nil {
+		return nil, fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	if err = os.Rename(srcPath, dstPath); err != nil {
+		return nil, fmt.Errorf("failed to move file: %w", err)
+	}
+
+	s.logger.Info("file moved", zap.String("source", srcPath), zap.String("destination", dstPath))
+	return &types.OperationResponse{
+		Success: true,
+		Message: types.MsgFileMoved,
+	}, nil
+}
+
+// MoveDirectory 移动目录（仅限目录）/ Move directory only
+func (s *Service) MoveDirectory(req *types.MoveDirectoryRequest) (*types.OperationResponse, error) {
+	// 参数验证 / Parameter validation
+	if req.Source == "" || req.Destination == "" {
+		return nil, errors.New("source and destination are required")
+	}
+
+	srcPath, err := s.validatePath(req.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	dstPath, err := s.validatePath(req.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查源是否为目录 / Check if source is a directory
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, errors.New(types.ErrFileNotFound)
+		}
+		return nil, fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	if !srcInfo.IsDir() {
+		return nil, errors.New("source is a file, use move_file instead")
+	}
+
+	// 确保目标父目录存在 / Ensure destination parent directory exists
+	dstDir := filepath.Dir(dstPath)
+	if err = os.MkdirAll(dstDir, DefaultDirPerm); err != nil {
+		return nil, fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	if err = os.Rename(srcPath, dstPath); err != nil {
+		return nil, fmt.Errorf("failed to move directory: %w", err)
+	}
+
+	s.logger.Info("directory moved", zap.String("source", srcPath), zap.String("destination", dstPath))
+	return &types.OperationResponse{
+		Success: true,
+		Message: "directory moved successfully",
 	}, nil
 }
 
@@ -612,13 +868,50 @@ func (s *Service) FileExists(req *types.FileExistsRequest) (*types.FileExistsRes
 }
 
 // GetCurrentTime 获取当前系统时间 / Get current system time
-func (s *Service) GetCurrentTime() (*types.GetTimeResponse, error) {
-	now := time.Now()
-	zone, _ := now.Zone()
+// 支持指定时区，如果未指定则使用系统本地时区
+func (s *Service) GetCurrentTime(req *types.GetCurrentTimeRequest) (*types.GetTimeResponse, error) {
+	var loc *time.Location
+	var err error
+
+	// 如果指定了时区，则加载该时区；否则使用本地时区
+	if req != nil && req.TimeZone != "" {
+		loc, err = time.LoadLocation(req.TimeZone)
+		if err != nil {
+			return nil, fmt.Errorf("invalid timezone '%s': %w", req.TimeZone, err)
+		}
+	} else {
+		loc = time.Local
+	}
+
+	now := time.Now().In(loc)
+	zoneName, offset := now.Zone()
+
+	// 计算时区偏移字符串 (如 +08:00)
+	offsetHours := offset / 3600
+	offsetMinutes := (offset % 3600) / 60
+	if offsetMinutes < 0 {
+		offsetMinutes = -offsetMinutes
+	}
+	var offsetStr string
+	if offset >= 0 {
+		offsetStr = fmt.Sprintf("+%02d:%02d", offsetHours, offsetMinutes)
+	} else {
+		offsetStr = fmt.Sprintf("-%02d:%02d", -offsetHours, offsetMinutes)
+	}
+
+	// 判断是否为夏令时（通过比较标准时区名称）
+	_, winterOffset := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, loc).Zone()
+	isDST := offset != winterOffset
 
 	return &types.GetTimeResponse{
-		Time:     now,
-		TimeZone: zone,
-		Unix:     now.Unix(),
+		DateTime:       now.Format("2006-01-02 15:04:05"),
+		Date:           now.Format("2006-01-02"),
+		Time:           now.Format("15:04:05"),
+		TimeZone:       zoneName,
+		TimeZoneOffset: offsetStr,
+		Unix:           now.Unix(),
+		UnixMilli:      now.UnixMilli(),
+		Weekday:        now.Weekday().String(),
+		IsDST:          isDST,
 	}, nil
 }

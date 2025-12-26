@@ -509,13 +509,40 @@ func TestGetCurrentTime(t *testing.T) {
 	service, tempDir := setupTestService(t)
 	defer cleanupTestService(t, tempDir)
 
-	resp, err := service.GetCurrentTime()
+	// 测试不指定时区（使用本地时区）
+	resp, err := service.GetCurrentTime(&types.GetCurrentTimeRequest{})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.NotZero(t, resp.Time)
+	assert.NotEmpty(t, resp.DateTime)
+	assert.NotEmpty(t, resp.Date)
+	assert.NotEmpty(t, resp.Time)
 	assert.NotEmpty(t, resp.TimeZone)
+	assert.NotEmpty(t, resp.TimeZoneOffset)
 	assert.NotZero(t, resp.Unix)
+	assert.NotZero(t, resp.UnixMilli)
+	assert.NotEmpty(t, resp.Weekday)
+}
+
+func TestGetCurrentTimeWithTimezone(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 测试指定时区
+	resp, err := service.GetCurrentTime(&types.GetCurrentTimeRequest{
+		TimeZone: "Asia/Shanghai",
+	})
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotEmpty(t, resp.DateTime)
+	assert.Contains(t, resp.TimeZoneOffset, "+08:00")
+
+	// 测试无效时区
+	_, err = service.GetCurrentTime(&types.GetCurrentTimeRequest{
+		TimeZone: "Invalid/Timezone",
+	})
+	assert.Error(t, err)
 }
 
 func TestCopyFileSourceNotFound(t *testing.T) {

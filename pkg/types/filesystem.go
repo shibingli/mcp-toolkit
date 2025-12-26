@@ -48,21 +48,56 @@ type WriteFileRequest struct {
 	Content string `json:"content"` // 文件内容 / File content
 }
 
-// DeleteRequest 删除请求 / Delete request
+// DeleteRequest 删除请求（自动判断文件或目录）/ Delete request (auto-detect file or directory)
 type DeleteRequest struct {
 	Path string `json:"path"` // 文件或目录路径 / File or directory path
 }
 
-// CopyRequest 复制请求 / Copy request
+// DeleteFileRequest 删除文件请求 / Delete file request
+type DeleteFileRequest struct {
+	Path string `json:"path"` // 文件路径 / File path
+}
+
+// DeleteDirectoryRequest 删除目录请求 / Delete directory request
+type DeleteDirectoryRequest struct {
+	Path      string `json:"path"`      // 目录路径 / Directory path
+	Recursive bool   `json:"recursive"` // 是否递归删除子目录和文件 / Whether to recursively delete subdirectories and files
+}
+
+// CopyRequest 复制请求（自动判断文件或目录）/ Copy request (auto-detect file or directory)
 type CopyRequest struct {
 	Source      string `json:"source"`      // 源路径 / Source path
 	Destination string `json:"destination"` // 目标路径 / Destination path
 }
 
-// MoveRequest 移动请求 / Move request
+// CopyFileRequest 复制文件请求 / Copy file request
+type CopyFileRequest struct {
+	Source      string `json:"source"`      // 源文件路径 / Source file path
+	Destination string `json:"destination"` // 目标文件路径 / Destination file path
+}
+
+// CopyDirectoryRequest 复制目录请求 / Copy directory request
+type CopyDirectoryRequest struct {
+	Source      string `json:"source"`      // 源目录路径 / Source directory path
+	Destination string `json:"destination"` // 目标目录路径 / Destination directory path
+}
+
+// MoveRequest 移动请求（自动判断文件或目录）/ Move request (auto-detect file or directory)
 type MoveRequest struct {
 	Source      string `json:"source"`      // 源路径 / Source path
 	Destination string `json:"destination"` // 目标路径 / Destination path
+}
+
+// MoveFileRequest 移动文件请求 / Move file request
+type MoveFileRequest struct {
+	Source      string `json:"source"`      // 源文件路径 / Source file path
+	Destination string `json:"destination"` // 目标文件路径 / Destination file path
+}
+
+// MoveDirectoryRequest 移动目录请求 / Move directory request
+type MoveDirectoryRequest struct {
+	Source      string `json:"source"`      // 源目录路径 / Source directory path
+	Destination string `json:"destination"` // 目标目录路径 / Destination directory path
 }
 
 // ListDirRequest 列出目录请求 / List directory request
@@ -103,11 +138,29 @@ type WriteFileResponse = OperationResponse
 // DeleteResponse 删除响应 / Delete response
 type DeleteResponse = OperationResponse
 
+// DeleteFileResponse 删除文件响应 / Delete file response
+type DeleteFileResponse = OperationResponse
+
+// DeleteDirectoryResponse 删除目录响应 / Delete directory response
+type DeleteDirectoryResponse = OperationResponse
+
 // CopyResponse 复制响应 / Copy response
 type CopyResponse = OperationResponse
 
+// CopyFileResponse 复制文件响应 / Copy file response
+type CopyFileResponse = OperationResponse
+
+// CopyDirectoryResponse 复制目录响应 / Copy directory response
+type CopyDirectoryResponse = OperationResponse
+
 // MoveResponse 移动响应 / Move response
 type MoveResponse = OperationResponse
+
+// MoveFileResponse 移动文件响应 / Move file response
+type MoveFileResponse = OperationResponse
+
+// MoveDirectoryResponse 移动目录响应 / Move directory response
+type MoveDirectoryResponse = OperationResponse
 
 // BatchDeleteResponse 批量删除响应 / Batch delete response
 type BatchDeleteResponse = OperationResponse
@@ -141,14 +194,25 @@ type OperationResponse struct {
 	Message string `json:"message"` // 消息 / Message
 }
 
+// GetCurrentTimeRequest 获取当前时间请求 / Get current time request
+type GetCurrentTimeRequest struct {
+	TimeZone string `json:"timezone,omitempty"` // 时区（可选，如 "Asia/Shanghai"、"America/New_York"），为空则使用系统本地时区 / Time zone (optional, e.g. "Asia/Shanghai", "America/New_York"), empty means use system local timezone
+}
+
 // GetCurrentTimeResponse 获取当前时间响应 / Get current time response
 type GetCurrentTimeResponse = GetTimeResponse
 
 // GetTimeResponse 获取时间响应 / Get time response
 type GetTimeResponse struct {
-	Time     time.Time `json:"time"`      // 当前时间 / Current time
-	TimeZone string    `json:"time_zone"` // 时区 / Time zone
-	Unix     int64     `json:"unix"`      // Unix时间戳 / Unix timestamp
+	DateTime       string `json:"datetime"`         // 格式化的日期时间字符串 / Formatted datetime string
+	Date           string `json:"date"`             // 日期 (YYYY-MM-DD) / Date (YYYY-MM-DD)
+	Time           string `json:"time"`             // 时间 (HH:MM:SS) / Time (HH:MM:SS)
+	TimeZone       string `json:"timezone"`         // 时区名称 / Time zone name
+	TimeZoneOffset string `json:"timezone_offset"`  // 时区偏移 (如 +08:00) / Time zone offset (e.g. +08:00)
+	Unix           int64  `json:"unix"`             // Unix时间戳（秒）/ Unix timestamp (seconds)
+	UnixMilli      int64  `json:"unix_milli"`       // Unix时间戳（毫秒）/ Unix timestamp (milliseconds)
+	Weekday        string `json:"weekday"`          // 星期几 / Day of week
+	IsDST          bool   `json:"is_dst,omitempty"` // 是否夏令时 / Is daylight saving time
 }
 
 // ExecuteCommandRequest 执行命令请求 / Execute command request

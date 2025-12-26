@@ -16,150 +16,217 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "create_file",
 		Description: "创建新文件并写入内容 / Create a new file and write content",
+		InputSchema: types.GetToolSchema("create_file"),
 	}, s.handleCreateFile)
 
 	// 创建目录 / Create directory
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "create_directory",
 		Description: "创建新目录 / Create a new directory",
+		InputSchema: types.GetToolSchema("create_directory"),
 	}, s.handleCreateDir)
 
 	// 读取文件 / Read file
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "read_file",
 		Description: "读取文件内容 / Read file content",
+		InputSchema: types.GetToolSchema("read_file"),
 	}, s.handleReadFile)
 
 	// 写入文件 / Write file
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "write_file",
 		Description: "写入或覆盖文件内容 / Write or overwrite file content",
+		InputSchema: types.GetToolSchema("write_file"),
 	}, s.handleWriteFile)
 
-	// 删除文件或目录 / Delete file or directory
+	// 删除文件或目录（自动判断）/ Delete file or directory (auto-detect)
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "delete",
-		Description: "删除文件或目录 / Delete file or directory",
+		Description: "[推荐] 删除文件或目录，自动判断类型。这是删除操作的首选工具。/ [Recommended] Delete file or directory, auto-detect type. This is the preferred tool for deletion.",
+		InputSchema: types.GetToolSchema("delete"),
 	}, s.handleDelete)
+
+	// 删除文件（仅限文件）/ Delete file only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "delete_file",
+		Description: "删除指定的文件。仅用于删除文件，不能删除目录。如果不确定是文件还是目录，请使用 delete 工具。/ Delete specified file. Only for files, cannot delete directories. Use 'delete' tool if unsure.",
+		InputSchema: types.GetToolSchema("delete_file"),
+	}, s.handleDeleteFile)
+
+	// 删除目录（仅限目录）/ Delete directory only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "delete_directory",
+		Description: "删除指定的目录及其所有内容。仅用于删除目录，不能删除文件。如果不确定是文件还是目录，请使用 delete 工具。/ Delete specified directory and all its contents. Only for directories, cannot delete files. Use 'delete' tool if unsure.",
+		InputSchema: types.GetToolSchema("delete_directory"),
+	}, s.handleDeleteDirectory)
 
 	// 复制文件或目录 / Copy file or directory
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "copy",
-		Description: "复制文件或目录 / Copy file or directory",
+		Description: "复制文件或目录到新位置 / Copy file or directory to new location",
+		InputSchema: types.GetToolSchema("copy"),
 	}, s.handleCopy)
 
-	// 移动文件或目录 / Move file or directory
+	// 复制文件（仅限文件）/ Copy file only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "copy_file",
+		Description: "复制指定的文件。仅用于复制文件，不能复制目录。如果不确定是文件还是目录，请使用 copy 工具。/ Copy specified file. Only for files, cannot copy directories. Use 'copy' tool if unsure.",
+		InputSchema: types.GetToolSchema("copy_file"),
+	}, s.handleCopyFile)
+
+	// 复制目录（仅限目录）/ Copy directory only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "copy_directory",
+		Description: "复制指定的目录及其所有内容。仅用于复制目录，不能复制文件。如果不确定是文件还是目录，请使用 copy 工具。/ Copy specified directory and all its contents. Only for directories, cannot copy files. Use 'copy' tool if unsure.",
+		InputSchema: types.GetToolSchema("copy_directory"),
+	}, s.handleCopyDirectory)
+
+	// 移动文件或目录（自动判断）/ Move file or directory (auto-detect)
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "move",
-		Description: "移动或重命名文件或目录 / Move or rename file or directory",
+		Description: "[推荐] 移动或重命名文件或目录，自动判断类型。这是移动操作的首选工具。/ [Recommended] Move or rename file or directory, auto-detect type. This is the preferred tool for moving.",
+		InputSchema: types.GetToolSchema("move"),
 	}, s.handleMove)
+
+	// 移动文件（仅限文件）/ Move file only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "move_file",
+		Description: "移动或重命名指定的文件。仅用于移动文件，不能移动目录。如果不确定是文件还是目录，请使用 move 工具。/ Move or rename specified file. Only for files, cannot move directories. Use 'move' tool if unsure.",
+		InputSchema: types.GetToolSchema("move_file"),
+	}, s.handleMoveFile)
+
+	// 移动目录（仅限目录）/ Move directory only
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "move_directory",
+		Description: "移动或重命名指定的目录。仅用于移动目录，不能移动文件。如果不确定是文件还是目录，请使用 move 工具。/ Move or rename specified directory. Only for directories, cannot move files. Use 'move' tool if unsure.",
+		InputSchema: types.GetToolSchema("move_directory"),
+	}, s.handleMoveDirectory)
 
 	// 列出目录 / List directory
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "list_directory",
 		Description: "列出目录中的文件和子目录 / List files and subdirectories in a directory",
+		InputSchema: types.GetToolSchema("list_directory"),
 	}, s.handleListDir)
 
 	// 搜索文件 / Search files
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "search_files",
 		Description: "根据文件名模式搜索文件 / Search files by filename pattern",
+		InputSchema: types.GetToolSchema("search_files"),
 	}, s.handleSearch)
 
 	// 批量删除 / Batch delete
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "batch_delete",
 		Description: "批量删除多个文件或目录 / Batch delete multiple files or directories",
+		InputSchema: types.GetToolSchema("batch_delete"),
 	}, s.handleBatchDelete)
 
 	// 文件状态 / File stat
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "file_stat",
 		Description: "获取文件或目录的详细信息 / Get detailed information about a file or directory",
+		InputSchema: types.GetToolSchema("file_stat"),
 	}, s.handleFileStat)
 
 	// 文件是否存在 / File exists
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "file_exists",
 		Description: "检查文件或目录是否存在 / Check if a file or directory exists",
+		InputSchema: types.GetToolSchema("file_exists"),
 	}, s.handleFileExists)
 
 	// 获取当前时间 / Get current time
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_current_time",
-		Description: "获取当前系统时间 / Get current system time",
+		Description: "获取当前系统时间。可指定时区（如 'Asia/Shanghai'、'America/New_York'），不指定则使用系统本地时区。返回格式化的日期时间、时区信息和Unix时间戳。/ Get current system time. Can specify timezone (e.g. 'Asia/Shanghai', 'America/New_York'), uses system local timezone if not specified. Returns formatted datetime, timezone info and Unix timestamp.",
+		InputSchema: types.GetToolSchema("get_current_time"),
 	}, s.handleGetCurrentTime)
 
 	// 执行命令 / Execute command
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "execute_command",
-		Description: "在沙箱目录内执行命令行命令 / Execute command line command within sandbox directory",
+		Description: "执行shell命令（如git、npm、python等）。注意：不要用于文件操作（创建、删除、复制、移动文件/目录），请使用专门的文件工具如 create_file、delete、delete_file、delete_directory、copy、move 等。/ Execute shell commands (git, npm, python, etc). NOTE: Do NOT use for file operations (create, delete, copy, move files/directories), use dedicated file tools instead: create_file, delete, delete_file, delete_directory, copy, move, etc.",
+		InputSchema: types.GetToolSchema("execute_command"),
 	}, s.handleExecuteCommand)
 
 	// 获取命令黑名单 / Get command blacklist
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_command_blacklist",
 		Description: "获取命令和目录黑名单 / Get command and directory blacklist",
+		InputSchema: types.GetToolSchema("get_command_blacklist"),
 	}, s.handleGetCommandBlacklist)
 
 	// 更新命令黑名单 / Update command blacklist
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "update_command_blacklist",
 		Description: "更新命令和目录黑名单 / Update command and directory blacklist",
+		InputSchema: types.GetToolSchema("update_command_blacklist"),
 	}, s.handleUpdateCommandBlacklist)
 
 	// 获取当前工作目录 / Get working directory
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_working_directory",
 		Description: "获取当前工作目录 / Get current working directory",
+		InputSchema: types.GetToolSchema("get_working_directory"),
 	}, s.handleGetWorkingDirectory)
 
 	// 切换工作目录 / Change directory
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "change_directory",
 		Description: "切换当前工作目录 / Change current working directory",
+		InputSchema: types.GetToolSchema("change_directory"),
 	}, s.handleChangeDirectory)
 
 	// 异步执行命令 / Execute command asynchronously
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "execute_command_async",
 		Description: "异步执行命令,返回任务ID / Execute command asynchronously, returns task ID",
+		InputSchema: types.GetToolSchema("execute_command_async"),
 	}, s.handleExecuteCommandAsync)
 
 	// 获取命令任务 / Get command task
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_command_task",
 		Description: "获取异步命令任务状态 / Get async command task status",
+		InputSchema: types.GetToolSchema("get_command_task_status"),
 	}, s.handleGetCommandTask)
 
 	// 取消命令任务 / Cancel command task
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "cancel_command_task",
 		Description: "取消正在执行的命令任务 / Cancel running command task",
+		InputSchema: types.GetToolSchema("cancel_command_task"),
 	}, s.handleCancelCommandTask)
 
 	// 获取命令历史 / Get command history
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_command_history",
 		Description: "获取命令执行历史记录 / Get command execution history",
+		InputSchema: types.GetToolSchema("get_command_history"),
 	}, s.handleGetCommandHistory)
 
 	// 清空命令历史 / Clear command history
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "clear_command_history",
 		Description: "清空命令执行历史记录 / Clear command execution history",
+		InputSchema: types.GetToolSchema("clear_command_history"),
 	}, s.handleClearCommandHistory)
 
 	// 设置权限级别 / Set permission level
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "set_permission_level",
 		Description: "设置命令执行权限级别 / Set command execution permission level",
+		InputSchema: types.GetToolSchema("set_permission_level"),
 	}, s.handleSetPermissionLevel)
 
 	// 获取权限级别 / Get permission level
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_permission_level",
 		Description: "获取当前权限级别 / Get current permission level",
+		InputSchema: types.GetToolSchema("get_permission_level"),
 	}, s.handleGetPermissionLevel)
 }
 
@@ -223,7 +290,7 @@ func (s *Service) handleWriteFile(_ context.Context, _ *mcp.CallToolRequest, arg
 	}, resp, nil
 }
 
-// handleDelete 处理删除请求 / Handle delete request
+// handleDelete 处理删除请求（自动判断文件或目录）/ Handle delete request (auto-detect file or directory)
 func (s *Service) handleDelete(_ context.Context, _ *mcp.CallToolRequest, args types.DeleteRequest) (*mcp.CallToolResult, *types.DeleteResponse, error) {
 	resp, err := s.Delete(&args)
 	if err != nil {
@@ -238,7 +305,41 @@ func (s *Service) handleDelete(_ context.Context, _ *mcp.CallToolRequest, args t
 	}, resp, nil
 }
 
-// handleCopy 处理复制请求 / Handle copy request
+// handleDeleteFile 处理删除文件请求 / Handle delete file request
+func (s *Service) handleDeleteFile(_ context.Context, _ *mcp.CallToolRequest, args types.DeleteFileRequest) (*mcp.CallToolResult, *types.DeleteFileResponse, error) {
+	resp, err := s.DeleteFile(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleDeleteDirectory 处理删除目录请求 / Handle delete directory request
+func (s *Service) handleDeleteDirectory(_ context.Context, _ *mcp.CallToolRequest, args types.DeleteDirectoryRequest) (*mcp.CallToolResult, *types.DeleteDirectoryResponse, error) {
+	// 默认递归删除 / Default to recursive delete
+	if !args.Recursive {
+		args.Recursive = true
+	}
+	resp, err := s.DeleteDirectory(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleCopy 处理复制请求（自动判断文件或目录）/ Handle copy request (auto-detect file or directory)
 func (s *Service) handleCopy(_ context.Context, _ *mcp.CallToolRequest, args types.CopyRequest) (*mcp.CallToolResult, *types.CopyResponse, error) {
 	resp, err := s.Copy(&args)
 	if err != nil {
@@ -253,9 +354,69 @@ func (s *Service) handleCopy(_ context.Context, _ *mcp.CallToolRequest, args typ
 	}, resp, nil
 }
 
-// handleMove 处理移动请求 / Handle move request
+// handleCopyFile 处理复制文件请求 / Handle copy file request
+func (s *Service) handleCopyFile(_ context.Context, _ *mcp.CallToolRequest, args types.CopyFileRequest) (*mcp.CallToolResult, *types.CopyFileResponse, error) {
+	resp, err := s.CopyFile(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleCopyDirectory 处理复制目录请求 / Handle copy directory request
+func (s *Service) handleCopyDirectory(_ context.Context, _ *mcp.CallToolRequest, args types.CopyDirectoryRequest) (*mcp.CallToolResult, *types.CopyDirectoryResponse, error) {
+	resp, err := s.CopyDirectory(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleMove 处理移动请求（自动判断文件或目录）/ Handle move request (auto-detect file or directory)
 func (s *Service) handleMove(_ context.Context, _ *mcp.CallToolRequest, args types.MoveRequest) (*mcp.CallToolResult, *types.MoveResponse, error) {
 	resp, err := s.Move(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleMoveFile 处理移动文件请求 / Handle move file request
+func (s *Service) handleMoveFile(_ context.Context, _ *mcp.CallToolRequest, args types.MoveFileRequest) (*mcp.CallToolResult, *types.MoveFileResponse, error) {
+	resp, err := s.MoveFile(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleMoveDirectory 处理移动目录请求 / Handle move directory request
+func (s *Service) handleMoveDirectory(_ context.Context, _ *mcp.CallToolRequest, args types.MoveDirectoryRequest) (*mcp.CallToolResult, *types.MoveDirectoryResponse, error) {
+	resp, err := s.MoveDirectory(&args)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -344,8 +505,8 @@ func (s *Service) handleFileExists(_ context.Context, _ *mcp.CallToolRequest, ar
 }
 
 // handleGetCurrentTime 处理获取当前时间请求 / Handle get current time request
-func (s *Service) handleGetCurrentTime(_ context.Context, _ *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, *types.GetCurrentTimeResponse, error) {
-	resp, err := s.GetCurrentTime()
+func (s *Service) handleGetCurrentTime(_ context.Context, _ *mcp.CallToolRequest, args types.GetCurrentTimeRequest) (*mcp.CallToolResult, *types.GetCurrentTimeResponse, error) {
+	resp, err := s.GetCurrentTime(&args)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -439,150 +600,217 @@ func (s *Service) RegisterToolsToRegistry(registry *transport.ToolRegistry) {
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "create_file",
 		Description: "创建新文件并写入内容 / Create a new file and write content",
+		InputSchema: types.GetToolSchema("create_file"),
 	}, s.wrapCreateFile)
 
 	// 创建目录 / Create directory
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "create_directory",
 		Description: "创建新目录 / Create a new directory",
+		InputSchema: types.GetToolSchema("create_directory"),
 	}, s.wrapCreateDir)
 
 	// 读取文件 / Read file
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "read_file",
 		Description: "读取文件内容 / Read file content",
+		InputSchema: types.GetToolSchema("read_file"),
 	}, s.wrapReadFile)
 
 	// 写入文件 / Write file
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "write_file",
 		Description: "写入或覆盖文件内容 / Write or overwrite file content",
+		InputSchema: types.GetToolSchema("write_file"),
 	}, s.wrapWriteFile)
 
-	// 删除文件或目录 / Delete file or directory
+	// 删除文件或目录（自动判断）/ Delete file or directory (auto-detect)
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "delete",
-		Description: "删除文件或目录 / Delete file or directory",
+		Description: "[推荐] 删除文件或目录，自动判断类型。这是删除操作的首选工具。/ [Recommended] Delete file or directory, auto-detect type. This is the preferred tool for deletion.",
+		InputSchema: types.GetToolSchema("delete"),
 	}, s.wrapDelete)
 
-	// 复制文件或目录 / Copy file or directory
+	// 删除文件（仅限文件）/ Delete file only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "delete_file",
+		Description: "删除指定的文件。仅用于删除文件，不能删除目录。如果不确定是文件还是目录，请使用 delete 工具。/ Delete specified file. Only for files, cannot delete directories. Use 'delete' tool if unsure.",
+		InputSchema: types.GetToolSchema("delete_file"),
+	}, s.wrapDeleteFile)
+
+	// 删除目录（仅限目录）/ Delete directory only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "delete_directory",
+		Description: "删除指定的目录及其所有内容。仅用于删除目录，不能删除文件。如果不确定是文件还是目录，请使用 delete 工具。/ Delete specified directory and all its contents. Only for directories, cannot delete files. Use 'delete' tool if unsure.",
+		InputSchema: types.GetToolSchema("delete_directory"),
+	}, s.wrapDeleteDirectory)
+
+	// 复制文件或目录（自动判断）/ Copy file or directory (auto-detect)
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "copy",
-		Description: "复制文件或目录 / Copy file or directory",
+		Description: "[推荐] 复制文件或目录到新位置，自动判断类型。这是复制操作的首选工具。/ [Recommended] Copy file or directory to new location, auto-detect type. This is the preferred tool for copying.",
+		InputSchema: types.GetToolSchema("copy"),
 	}, s.wrapCopy)
 
-	// 移动文件或目录 / Move file or directory
+	// 复制文件（仅限文件）/ Copy file only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "copy_file",
+		Description: "复制指定的文件。仅用于复制文件，不能复制目录。如果不确定是文件还是目录，请使用 copy 工具。/ Copy specified file. Only for files, cannot copy directories. Use 'copy' tool if unsure.",
+		InputSchema: types.GetToolSchema("copy_file"),
+	}, s.wrapCopyFile)
+
+	// 复制目录（仅限目录）/ Copy directory only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "copy_directory",
+		Description: "复制指定的目录及其所有内容。仅用于复制目录，不能复制文件。如果不确定是文件还是目录，请使用 copy 工具。/ Copy specified directory and all its contents. Only for directories, cannot copy files. Use 'copy' tool if unsure.",
+		InputSchema: types.GetToolSchema("copy_directory"),
+	}, s.wrapCopyDirectory)
+
+	// 移动文件或目录（自动判断）/ Move file or directory (auto-detect)
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "move",
-		Description: "移动或重命名文件或目录 / Move or rename file or directory",
+		Description: "[推荐] 移动或重命名文件或目录，自动判断类型。这是移动操作的首选工具。/ [Recommended] Move or rename file or directory, auto-detect type. This is the preferred tool for moving.",
+		InputSchema: types.GetToolSchema("move"),
 	}, s.wrapMove)
+
+	// 移动文件（仅限文件）/ Move file only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "move_file",
+		Description: "移动或重命名指定的文件。仅用于移动文件，不能移动目录。如果不确定是文件还是目录，请使用 move 工具。/ Move or rename specified file. Only for files, cannot move directories. Use 'move' tool if unsure.",
+		InputSchema: types.GetToolSchema("move_file"),
+	}, s.wrapMoveFile)
+
+	// 移动目录（仅限目录）/ Move directory only
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "move_directory",
+		Description: "移动或重命名指定的目录。仅用于移动目录，不能移动文件。如果不确定是文件还是目录，请使用 move 工具。/ Move or rename specified directory. Only for directories, cannot move files. Use 'move' tool if unsure.",
+		InputSchema: types.GetToolSchema("move_directory"),
+	}, s.wrapMoveDirectory)
 
 	// 列出目录 / List directory
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "list_directory",
 		Description: "列出目录中的文件和子目录 / List files and subdirectories in a directory",
+		InputSchema: types.GetToolSchema("list_directory"),
 	}, s.wrapListDir)
 
 	// 搜索文件 / Search files
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "search_files",
 		Description: "根据文件名模式搜索文件 / Search files by filename pattern",
+		InputSchema: types.GetToolSchema("search_files"),
 	}, s.wrapSearch)
 
 	// 批量删除 / Batch delete
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "batch_delete",
 		Description: "批量删除多个文件或目录 / Batch delete multiple files or directories",
+		InputSchema: types.GetToolSchema("batch_delete"),
 	}, s.wrapBatchDelete)
 
 	// 文件状态 / File stat
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "file_stat",
 		Description: "获取文件或目录的详细信息 / Get detailed information about a file or directory",
+		InputSchema: types.GetToolSchema("file_stat"),
 	}, s.wrapFileStat)
 
 	// 文件是否存在 / File exists
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "file_exists",
 		Description: "检查文件或目录是否存在 / Check if a file or directory exists",
+		InputSchema: types.GetToolSchema("file_exists"),
 	}, s.wrapFileExists)
 
 	// 获取当前时间 / Get current time
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_current_time",
-		Description: "获取当前系统时间 / Get current system time",
+		Description: "获取当前系统时间。可指定时区（如 'Asia/Shanghai'、'America/New_York'），不指定则使用系统本地时区。返回格式化的日期时间、时区信息和Unix时间戳。/ Get current system time. Can specify timezone (e.g. 'Asia/Shanghai', 'America/New_York'), uses system local timezone if not specified. Returns formatted datetime, timezone info and Unix timestamp.",
+		InputSchema: types.GetToolSchema("get_current_time"),
 	}, s.wrapGetCurrentTime)
 
 	// 执行命令 / Execute command
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "execute_command",
-		Description: "在沙箱目录内执行命令行命令 / Execute command line command within sandbox directory",
+		Description: "执行shell命令（如git、npm、python等）。注意：不要用于文件操作（创建、删除、复制、移动文件/目录），请使用专门的文件工具如 create_file、delete、delete_file、delete_directory、copy、move 等。/ Execute shell commands (git, npm, python, etc). NOTE: Do NOT use for file operations (create, delete, copy, move files/directories), use dedicated file tools instead: create_file, delete, delete_file, delete_directory, copy, move, etc.",
+		InputSchema: types.GetToolSchema("execute_command"),
 	}, s.wrapExecuteCommand)
 
 	// 获取命令黑名单 / Get command blacklist
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_command_blacklist",
 		Description: "获取命令和目录黑名单 / Get command and directory blacklist",
+		InputSchema: types.GetToolSchema("get_command_blacklist"),
 	}, s.wrapGetCommandBlacklist)
 
 	// 更新命令黑名单 / Update command blacklist
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "update_command_blacklist",
 		Description: "更新命令和目录黑名单 / Update command and directory blacklist",
+		InputSchema: types.GetToolSchema("update_command_blacklist"),
 	}, s.wrapUpdateCommandBlacklist)
 
 	// 获取当前工作目录 / Get working directory
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_working_directory",
 		Description: "获取当前工作目录 / Get current working directory",
+		InputSchema: types.GetToolSchema("get_working_directory"),
 	}, s.wrapGetWorkingDirectory)
 
 	// 切换工作目录 / Change directory
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "change_directory",
 		Description: "切换当前工作目录 / Change current working directory",
+		InputSchema: types.GetToolSchema("change_directory"),
 	}, s.wrapChangeDirectory)
 
 	// 异步执行命令 / Execute command asynchronously
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "execute_command_async",
 		Description: "异步执行命令,返回任务ID / Execute command asynchronously, returns task ID",
+		InputSchema: types.GetToolSchema("execute_command_async"),
 	}, s.wrapExecuteCommandAsync)
 
 	// 获取命令任务 / Get command task
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_command_task",
 		Description: "获取异步命令任务状态 / Get async command task status",
+		InputSchema: types.GetToolSchema("get_command_task"),
 	}, s.wrapGetCommandTask)
 
 	// 取消命令任务 / Cancel command task
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "cancel_command_task",
 		Description: "取消正在执行的命令任务 / Cancel running command task",
+		InputSchema: types.GetToolSchema("cancel_command_task"),
 	}, s.wrapCancelCommandTask)
 
 	// 获取命令历史 / Get command history
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_command_history",
 		Description: "获取命令执行历史记录 / Get command execution history",
+		InputSchema: types.GetToolSchema("get_command_history"),
 	}, s.wrapGetCommandHistory)
 
 	// 清空命令历史 / Clear command history
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "clear_command_history",
 		Description: "清空命令执行历史记录 / Clear command execution history",
+		InputSchema: types.GetToolSchema("clear_command_history"),
 	}, s.wrapClearCommandHistory)
 
 	// 设置权限级别 / Set permission level
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "set_permission_level",
 		Description: "设置命令执行权限级别 / Set command execution permission level",
+		InputSchema: types.GetToolSchema("set_permission_level"),
 	}, s.wrapSetPermissionLevel)
 
 	// 获取权限级别 / Get permission level
 	registry.RegisterTool(&mcp.Tool{
 		Name:        "get_permission_level",
 		Description: "获取当前权限级别 / Get current permission level",
+		InputSchema: types.GetToolSchema("get_permission_level"),
 	}, s.wrapGetPermissionLevel)
 }
 
@@ -653,6 +881,32 @@ func (s *Service) wrapDelete(ctx context.Context, arguments interface{}) (*mcp.C
 	return result, err
 }
 
+func (s *Service) wrapDeleteFile(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.DeleteFileRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleDeleteFile(ctx, nil, args)
+	return result, err
+}
+
+func (s *Service) wrapDeleteDirectory(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.DeleteDirectoryRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleDeleteDirectory(ctx, nil, args)
+	return result, err
+}
+
 func (s *Service) wrapCopy(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
 	argsJSON, err := json.Marshal(arguments)
 	if err != nil {
@@ -666,6 +920,32 @@ func (s *Service) wrapCopy(ctx context.Context, arguments interface{}) (*mcp.Cal
 	return result, err
 }
 
+func (s *Service) wrapCopyFile(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.CopyFileRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleCopyFile(ctx, nil, args)
+	return result, err
+}
+
+func (s *Service) wrapCopyDirectory(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.CopyDirectoryRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleCopyDirectory(ctx, nil, args)
+	return result, err
+}
+
 func (s *Service) wrapMove(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
 	argsJSON, err := json.Marshal(arguments)
 	if err != nil {
@@ -676,6 +956,32 @@ func (s *Service) wrapMove(ctx context.Context, arguments interface{}) (*mcp.Cal
 		return nil, err
 	}
 	result, _, err := s.handleMove(ctx, nil, args)
+	return result, err
+}
+
+func (s *Service) wrapMoveFile(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.MoveFileRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleMoveFile(ctx, nil, args)
+	return result, err
+}
+
+func (s *Service) wrapMoveDirectory(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.MoveDirectoryRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleMoveDirectory(ctx, nil, args)
 	return result, err
 }
 
@@ -745,7 +1051,15 @@ func (s *Service) wrapFileExists(ctx context.Context, arguments interface{}) (*m
 }
 
 func (s *Service) wrapGetCurrentTime(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
-	result, _, err := s.handleGetCurrentTime(ctx, nil, struct{}{})
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.GetCurrentTimeRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleGetCurrentTime(ctx, nil, args)
 	return result, err
 }
 

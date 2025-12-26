@@ -21,8 +21,15 @@ var pretouchTypes = []any{
 	types.ReadFileRequest{},
 	types.WriteFileRequest{},
 	types.DeleteRequest{},
+	types.DeleteFileRequest{},
+	types.DeleteDirectoryRequest{},
 	types.CopyRequest{},
+	types.CopyFileRequest{},
+	types.CopyDirectoryRequest{},
 	types.MoveRequest{},
+	types.MoveFileRequest{},
+	types.MoveDirectoryRequest{},
+	types.GetCurrentTimeRequest{},
 	types.ListDirRequest{},
 	types.SearchRequest{},
 	types.BatchDeleteRequest{},
@@ -71,6 +78,11 @@ var pretouchTypes = []any{
 	types.MCPToolsCallRequest{},
 	types.MCPInitializeRequest{},
 	types.SSEMessage{},
+
+	// ========== JSON Schema 相关结构体 / JSON Schema related structures ==========
+	types.JSONSchema{},
+	types.Property{},
+	types.Items{},
 }
 
 // PretouchAll 预热所有已注册的类型

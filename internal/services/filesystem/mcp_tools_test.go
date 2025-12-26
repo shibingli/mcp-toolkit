@@ -319,14 +319,14 @@ func TestHandleGetCurrentTime(t *testing.T) {
 	service, tempDir := setupTestService(t)
 	defer cleanupTestService(t, tempDir)
 
-	args := struct{}{}
+	args := types.GetCurrentTimeRequest{}
 
 	result, resp, err := service.handleGetCurrentTime(context.Background(), nil, args)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.NotNil(t, resp)
-	assert.NotZero(t, resp.Time)
+	assert.NotEmpty(t, resp.DateTime)
 	assert.NotEmpty(t, resp.TimeZone)
 	assert.NotZero(t, resp.Unix)
 }
