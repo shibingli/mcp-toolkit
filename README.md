@@ -328,6 +328,21 @@ Check preheating logs:
 
 **参数 / Parameters:** 无 / None
 
+#### 26. get_system_info
+获取系统信息 / Get system information
+
+获取完整的系统信息，包括操作系统、CPU、内存、GPU、网络接口等详细信息。
+Get complete system information including OS, CPU, memory, GPU, network interfaces and more.
+
+**参数 / Parameters:** 无 / None
+
+**返回 / Returns:**
+- `os`: 操作系统信息 / OS information (platform, architecture, hostname, uptime, etc.)
+- `cpu`: CPU信息 / CPU information (model, cores, frequency, usage, etc.)
+- `memory`: 内存信息 / Memory information (total, available, used, swap, etc.)
+- `gpus`: GPU信息列表 / GPU information list (name, memory, temperature, utilization, etc.)
+- `networks`: 网络接口信息列表 / Network interface list (name, MAC, IPs, speed, etc.)
+
 ## 文档 / Documentation
 
 - [命令执行使用指南](docs/COMMAND_EXECUTION.md) - 详细的命令执行功能说明
@@ -349,7 +364,12 @@ go test -v ./... -coverprofile=coverage.out
 go tool cover -html=coverage.out
 ```
 
-当前测试覆盖率 / Current test coverage: **79.1%**
+当前测试覆盖率 / Current test coverage:
+- sandbox: **53.0%**
+- client: **78.0%**
+- transport: **72.0%**
+- json: **86.1%**
+- recovery: **100.0%**
 
 ## 项目结构 / Project Structure
 
@@ -360,14 +380,25 @@ mcp-toolkit/
 ├── go.sum                               # 依赖校验和 / Dependency checksums
 ├── README.md                            # 项目文档 / Project documentation
 ├── pkg/
-│   └── types/                           # 类型定义 / Type definitions
-│       ├── filesystem.go                # 文件系统类型 / Filesystem types
-│       └── constants.go                 # 常量定义 / Constants
+│   ├── types/                           # 类型定义 / Type definitions
+│   │   ├── common.go                    # 通用类型 / Common types
+│   │   ├── file.go                      # 文件操作类型 / File operation types
+│   │   ├── command.go                   # 命令执行类型 / Command execution types
+│   │   ├── time.go                      # 时间类型 / Time types
+│   │   ├── sysinfo.go                   # 系统信息类型 / System info types
+│   │   ├── schema.go                    # JSON Schema 定义 / JSON Schema definitions
+│   │   └── constants.go                 # 常量定义 / Constants
+│   └── utils/
+│       └── json/                        # JSON 工具 / JSON utilities
+│           ├── json.go                  # JSON 编解码 / JSON encoding/decoding
+│           └── pretouch.go              # 结构体预热 / Struct pretouch
 └── internal/
     └── services/
-        └── filesystem/                  # 文件系统服务 / Filesystem service
+        └── sandbox/                     # 沙箱服务 / Sandbox service
             ├── service.go               # 核心服务实现 / Core service implementation
             ├── service_test.go          # 服务测试 / Service tests
+            ├── sysinfo.go               # 系统信息获取 / System info retrieval
+            ├── sysinfo_test.go          # 系统信息测试 / System info tests
             ├── mcp_tools.go             # MCP 工具注册 / MCP tools registration
             ├── mcp_tools_test.go        # 工具注册测试 / Tools registration tests
             ├── mcp_handlers.go          # MCP 处理器 / MCP handlers
@@ -378,9 +409,9 @@ mcp-toolkit/
 
 ### 完整功能测试 / Complete Functionality Test
 
-项目提供了完整的客户端测试工具,可以自动测试所有25个MCP工具。
+项目提供了完整的客户端测试工具,可以自动测试所有26个MCP工具。
 
-The project provides a complete client testing tool that automatically tests all 25 MCP tools.
+The project provides a complete client testing tool that automatically tests all 26 MCP tools.
 
 #### 运行测试 / Run Tests
 
@@ -420,14 +451,14 @@ go build -tags="sonic" -o mcp-toolkit-client.exe ./cmd/client
 
 #### 测试覆盖 / Test Coverage
 
-✅ **25个MCP工具** / 25 MCP Tools
+✅ **26个MCP工具** / 26 MCP Tools
 - 文件操作 (11个) / File Operations (11)
 - 目录操作 (2个) / Directory Operations (2)
 - 命令执行 (3个) / Command Execution (3)
 - 异步操作 (3个) / Async Operations (3)
 - 命令历史 (2个) / Command History (2)
 - 权限管理 (2个) / Permission Management (2)
-- 其他工具 (2个) / Other Tools (2)
+- 系统工具 (3个) / System Tools (3)
 
 
 ### 单元测试 / Unit Tests
@@ -437,7 +468,7 @@ go build -tags="sonic" -o mcp-toolkit-client.exe ./cmd/client
 go test -v ./...
 
 # 运行特定包的测试 / Run tests for specific package
-go test -v ./internal/services/filesystem/
+go test -v ./internal/services/sandbox/
 
 # 查看测试覆盖率 / View test coverage
 go test -cover ./...

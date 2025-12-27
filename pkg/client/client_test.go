@@ -270,3 +270,45 @@ func TestHTTPClient_SendRequest_NetworkError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send request")
 }
+
+// TestHTTPClient_GetSystemInfo 测试获取系统信息 / Test get system info
+func TestHTTPClient_GetSystemInfo(t *testing.T) {
+	// 创建模拟服务器 / Create mock server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req types.MCPRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		require.NoError(t, err)
+
+		assert.Equal(t, "tools/call", req.Method)
+
+		// 返回系统信息响应 / Return system info response
+		resp := types.MCPResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Result: map[string]interface{}{
+				"content": []interface{}{
+					map[string]interface{}{
+						"type": "text",
+						"text": `{"os":{"platform":"linux","architecture":"amd64","hostname":"test-host"},"cpu":{"logical_cores":8},"memory":{"total":16000000000}}`,
+					},
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	// 创建客户端 / Create client
+	logger := zap.NewNop()
+	client := NewHTTPClient("", 0, "", logger)
+	client.baseURL = server.URL
+
+	// 测试获取系统信息 / Test get system info
+	ctx := context.Background()
+	result, err := client.CallTool(ctx, "get_system_info", map[string]interface{}{})
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
