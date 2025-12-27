@@ -12,208 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package types 命令执行相关类型定义 / Command execution related type definitions
 package types
 
 import "time"
 
-// FileInfo 文件信息结构体 / File information structure
-type FileInfo struct {
-	Name    string    `json:"name"`     // 文件名 / File name
-	Path    string    `json:"path"`     // 文件路径 / File path
-	Size    int64     `json:"size"`     // 文件大小(字节) / File size in bytes
-	IsDir   bool      `json:"is_dir"`   // 是否为目录 / Whether it is a directory
-	Mode    string    `json:"mode"`     // 文件权限 / File permissions
-	ModTime time.Time `json:"mod_time"` // 修改时间 / Modification time
-}
+// CommandPermissionLevel 命令执行权限级别 / Command execution permission level
+type CommandPermissionLevel int
 
-// CreateFileRequest 创建文件请求 / Create file request
-type CreateFileRequest struct {
-	Path    string `json:"path"`    // 文件路径 / File path
-	Content string `json:"content"` // 文件内容 / File content
-}
+const (
+	// PermissionLevelReadOnly 只读权限 - 只能执行查询类命令 / Read-only permission - can only execute query commands
+	PermissionLevelReadOnly CommandPermissionLevel = iota
+	// PermissionLevelStandard 标准权限 - 可以执行大部分命令 / Standard permission - can execute most commands
+	PermissionLevelStandard
+	// PermissionLevelElevated 提升权限 - 可以执行所有非黑名单命令 / Elevated permission - can execute all non-blacklisted commands
+	PermissionLevelElevated
+	// PermissionLevelAdmin 管理员权限 - 可以执行所有命令(包括修改黑名单) / Admin permission - can execute all commands (including modifying blacklist)
+	PermissionLevelAdmin
+)
 
-// CreateDirRequest 创建目录请求 / Create directory request
-type CreateDirRequest struct {
-	Path string `json:"path"` // 目录路径 / Directory path
-}
+// CommandTaskStatus 命令任务状态 / Command task status
+type CommandTaskStatus string
 
-// ReadFileRequest 读取文件请求 / Read file request
-type ReadFileRequest struct {
-	Path string `json:"path"` // 文件路径 / File path
-}
-
-// WriteFileRequest 写入文件请求 / Write file request
-type WriteFileRequest struct {
-	Path    string `json:"path"`    // 文件路径 / File path
-	Content string `json:"content"` // 文件内容 / File content
-}
-
-// DeleteRequest 删除请求（自动判断文件或目录）/ Delete request (auto-detect file or directory)
-type DeleteRequest struct {
-	Path string `json:"path"` // 文件或目录路径 / File or directory path
-}
-
-// DeleteFileRequest 删除文件请求 / Delete file request
-type DeleteFileRequest struct {
-	Path string `json:"path"` // 文件路径 / File path
-}
-
-// DeleteDirectoryRequest 删除目录请求 / Delete directory request
-type DeleteDirectoryRequest struct {
-	Path      string `json:"path"`      // 目录路径 / Directory path
-	Recursive bool   `json:"recursive"` // 是否递归删除子目录和文件 / Whether to recursively delete subdirectories and files
-}
-
-// CopyRequest 复制请求（自动判断文件或目录）/ Copy request (auto-detect file or directory)
-type CopyRequest struct {
-	Source      string `json:"source"`      // 源路径 / Source path
-	Destination string `json:"destination"` // 目标路径 / Destination path
-}
-
-// CopyFileRequest 复制文件请求 / Copy file request
-type CopyFileRequest struct {
-	Source      string `json:"source"`      // 源文件路径 / Source file path
-	Destination string `json:"destination"` // 目标文件路径 / Destination file path
-}
-
-// CopyDirectoryRequest 复制目录请求 / Copy directory request
-type CopyDirectoryRequest struct {
-	Source      string `json:"source"`      // 源目录路径 / Source directory path
-	Destination string `json:"destination"` // 目标目录路径 / Destination directory path
-}
-
-// MoveRequest 移动请求（自动判断文件或目录）/ Move request (auto-detect file or directory)
-type MoveRequest struct {
-	Source      string `json:"source"`      // 源路径 / Source path
-	Destination string `json:"destination"` // 目标路径 / Destination path
-}
-
-// MoveFileRequest 移动文件请求 / Move file request
-type MoveFileRequest struct {
-	Source      string `json:"source"`      // 源文件路径 / Source file path
-	Destination string `json:"destination"` // 目标文件路径 / Destination file path
-}
-
-// MoveDirectoryRequest 移动目录请求 / Move directory request
-type MoveDirectoryRequest struct {
-	Source      string `json:"source"`      // 源目录路径 / Source directory path
-	Destination string `json:"destination"` // 目标目录路径 / Destination directory path
-}
-
-// ListDirRequest 列出目录请求 / List directory request
-type ListDirRequest struct {
-	Path string `json:"path"` // 目录路径 / Directory path
-}
-
-// SearchRequest 搜索请求 / Search request
-type SearchRequest struct {
-	Path    string `json:"path"`    // 搜索路径 / Search path
-	Pattern string `json:"pattern"` // 搜索模式 / Search pattern
-}
-
-// BatchDeleteRequest 批量删除请求 / Batch delete request
-type BatchDeleteRequest struct {
-	Paths []string `json:"paths"` // 文件或目录路径列表 / List of file or directory paths
-}
-
-// FileStatRequest 获取文件状态请求 / Get file status request
-type FileStatRequest struct {
-	Path string `json:"path"` // 文件路径 / File path
-}
-
-// FileExistsRequest 检查文件是否存在请求 / Check file exists request
-type FileExistsRequest struct {
-	Path string `json:"path"` // 文件路径 / File path
-}
-
-// CreateFileResponse 创建文件响应 / Create file response
-type CreateFileResponse = OperationResponse
-
-// CreateDirResponse 创建目录响应 / Create directory response
-type CreateDirResponse = OperationResponse
-
-// WriteFileResponse 写入文件响应 / Write file response
-type WriteFileResponse = OperationResponse
-
-// DeleteResponse 删除响应 / Delete response
-type DeleteResponse = OperationResponse
-
-// DeleteFileResponse 删除文件响应 / Delete file response
-type DeleteFileResponse = OperationResponse
-
-// DeleteDirectoryResponse 删除目录响应 / Delete directory response
-type DeleteDirectoryResponse = OperationResponse
-
-// CopyResponse 复制响应 / Copy response
-type CopyResponse = OperationResponse
-
-// CopyFileResponse 复制文件响应 / Copy file response
-type CopyFileResponse = OperationResponse
-
-// CopyDirectoryResponse 复制目录响应 / Copy directory response
-type CopyDirectoryResponse = OperationResponse
-
-// MoveResponse 移动响应 / Move response
-type MoveResponse = OperationResponse
-
-// MoveFileResponse 移动文件响应 / Move file response
-type MoveFileResponse = OperationResponse
-
-// MoveDirectoryResponse 移动目录响应 / Move directory response
-type MoveDirectoryResponse = OperationResponse
-
-// BatchDeleteResponse 批量删除响应 / Batch delete response
-type BatchDeleteResponse = OperationResponse
-
-// FileStatResponse 文件状态响应 / File stat response
-type FileStatResponse = FileInfo
-
-// FileExistsResponse 检查文件是否存在响应 / Check file exists response
-type FileExistsResponse struct {
-	Exists bool `json:"exists"` // 是否存在 / Whether exists
-}
-
-// ReadFileResponse 读取文件响应 / Read file response
-type ReadFileResponse struct {
-	Content string `json:"content"` // 文件内容 / File content
-}
-
-// ListDirResponse 列出目录响应 / List directory response
-type ListDirResponse struct {
-	Files []FileInfo `json:"files"` // 文件列表 / File list
-}
-
-// SearchResponse 搜索响应 / Search response
-type SearchResponse struct {
-	Files []FileInfo `json:"files"` // 匹配的文件列表 / Matched file list
-}
-
-// OperationResponse 操作响应 / Operation response
-type OperationResponse struct {
-	Success bool   `json:"success"` // 是否成功 / Whether successful
-	Message string `json:"message"` // 消息 / Message
-}
-
-// GetCurrentTimeRequest 获取当前时间请求 / Get current time request
-type GetCurrentTimeRequest struct {
-	TimeZone string `json:"timezone,omitempty"` // 时区（可选，如 "Asia/Shanghai"、"America/New_York"），为空则使用系统本地时区 / Time zone (optional, e.g. "Asia/Shanghai", "America/New_York"), empty means use system local timezone
-}
-
-// GetCurrentTimeResponse 获取当前时间响应 / Get current time response
-type GetCurrentTimeResponse = GetTimeResponse
-
-// GetTimeResponse 获取时间响应 / Get time response
-type GetTimeResponse struct {
-	DateTime       string `json:"datetime"`         // 格式化的日期时间字符串 / Formatted datetime string
-	Date           string `json:"date"`             // 日期 (YYYY-MM-DD) / Date (YYYY-MM-DD)
-	Time           string `json:"time"`             // 时间 (HH:MM:SS) / Time (HH:MM:SS)
-	TimeZone       string `json:"timezone"`         // 时区名称 / Time zone name
-	TimeZoneOffset string `json:"timezone_offset"`  // 时区偏移 (如 +08:00) / Time zone offset (e.g. +08:00)
-	Unix           int64  `json:"unix"`             // Unix时间戳（秒）/ Unix timestamp (seconds)
-	UnixMilli      int64  `json:"unix_milli"`       // Unix时间戳（毫秒）/ Unix timestamp (milliseconds)
-	Weekday        string `json:"weekday"`          // 星期几 / Day of week
-	IsDST          bool   `json:"is_dst,omitempty"` // 是否夏令时 / Is daylight saving time
-}
+const (
+	// TaskStatusPending 等待执行 / Pending execution
+	TaskStatusPending CommandTaskStatus = "pending"
+	// TaskStatusRunning 正在执行 / Running
+	TaskStatusRunning CommandTaskStatus = "running"
+	// TaskStatusCompleted 执行完成 / Completed
+	TaskStatusCompleted CommandTaskStatus = "completed"
+	// TaskStatusFailed 执行失败 / Failed
+	TaskStatusFailed CommandTaskStatus = "failed"
+	// TaskStatusCancelled 已取消 / Cancelled
+	TaskStatusCancelled CommandTaskStatus = "cancelled"
+)
 
 // ExecuteCommandRequest 执行命令请求 / Execute command request
 type ExecuteCommandRequest struct {
@@ -267,20 +99,6 @@ type ChangeDirectoryRequest struct {
 // ChangeDirectoryResponse 切换工作目录响应 / Change directory response
 type ChangeDirectoryResponse = OperationResponse
 
-// CommandPermissionLevel 命令执行权限级别 / Command execution permission level
-type CommandPermissionLevel int
-
-const (
-	// PermissionLevelReadOnly 只读权限 - 只能执行查询类命令 / Read-only permission - can only execute query commands
-	PermissionLevelReadOnly CommandPermissionLevel = iota
-	// PermissionLevelStandard 标准权限 - 可以执行大部分命令 / Standard permission - can execute most commands
-	PermissionLevelStandard
-	// PermissionLevelElevated 提升权限 - 可以执行所有非黑名单命令 / Elevated permission - can execute all non-blacklisted commands
-	PermissionLevelElevated
-	// PermissionLevelAdmin 管理员权限 - 可以执行所有命令(包括修改黑名单) / Admin permission - can execute all commands (including modifying blacklist)
-	PermissionLevelAdmin
-)
-
 // CommandHistoryEntry 命令执行历史记录条目 / Command execution history entry
 type CommandHistoryEntry struct {
 	ID              string                 `json:"id"`               // 历史记录ID / History entry ID
@@ -313,22 +131,6 @@ type ExecuteCommandAsyncResponse struct {
 	TaskID  string `json:"task_id"` // 任务ID / Task ID
 	Message string `json:"message"` // 消息 / Message
 }
-
-// CommandTaskStatus 命令任务状态 / Command task status
-type CommandTaskStatus string
-
-const (
-	// TaskStatusPending 等待执行 / Pending execution
-	TaskStatusPending CommandTaskStatus = "pending"
-	// TaskStatusRunning 正在执行 / Running
-	TaskStatusRunning CommandTaskStatus = "running"
-	// TaskStatusCompleted 执行完成 / Completed
-	TaskStatusCompleted CommandTaskStatus = "completed"
-	// TaskStatusFailed 执行失败 / Failed
-	TaskStatusFailed CommandTaskStatus = "failed"
-	// TaskStatusCancelled 已取消 / Cancelled
-	TaskStatusCancelled CommandTaskStatus = "cancelled"
-)
 
 // CommandTask 命令执行任务 / Command execution task
 type CommandTask struct {

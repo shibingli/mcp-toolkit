@@ -47,6 +47,7 @@ var pretouchTypes = []any{
 	types.ClearCommandHistoryRequest{},
 	types.SetPermissionLevelRequest{},
 	types.GetPermissionLevelRequest{},
+	types.GetSystemInfoRequest{},
 
 	// 响应类型 / Response types
 	types.FileExistsResponse{},
@@ -62,8 +63,17 @@ var pretouchTypes = []any{
 	types.GetCommandTaskResponse{},
 	types.GetCommandHistoryResponse{},
 	types.GetPermissionLevelResponse{},
+	types.GetSystemInfoResponse{},
 	types.CommandHistoryEntry{},
 	types.CommandTask{},
+
+	// 系统信息相关结构体 / System info related structures
+	types.OSInfo{},
+	types.CPUInfo{},
+	types.MemoryInfo{},
+	types.GPUInfo{},
+	types.NetworkInfo{},
+	types.IPAddress{},
 
 	// ========== 配置相关结构体 / Configuration related structures ==========
 	types.ServerConfig{},
