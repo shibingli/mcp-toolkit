@@ -1,6 +1,7 @@
-// Package filesystem 实现了 MCP Toolkit 的文件系统服务
+// Package sandbox 实现了 MCP Toolkit 的沙箱服务
 //
-// 本包提供了安全的文件系统操作功能，所有操作都在沙箱目录内进行。
+// 本包提供了安全的文件系统操作、命令执行、系统信息获取等功能，
+// 所有操作都在沙箱目录内进行。
 //
 // # 主要功能
 //
@@ -173,4 +174,4 @@
 // # 线程安全
 //
 // Service 是线程安全的，可以在多个 goroutine 中并发使用。
-package filesystem
+package sandbox

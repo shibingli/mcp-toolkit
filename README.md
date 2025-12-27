@@ -59,6 +59,7 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 
 ### 系统工具 / System Tools
 - ✅ 获取当前系统时间 / Get current system time
+- ✅ 获取系统信息 / Get system information (OS, CPU, Memory, GPU, Network)
 
 ### 安全特性 / Security Features
 - ✅ 沙箱目录限制 / Sandbox directory restriction

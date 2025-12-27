@@ -1,4 +1,4 @@
-package filesystem
+package sandbox
 
 import (
 	"os"
@@ -786,4 +786,198 @@ func TestListDirWithFileInfo(t *testing.T) {
 		assert.NotEmpty(t, file.Mode)
 		assert.NotZero(t, file.ModTime)
 	}
+}
+
+// TestDeleteFile 测试删除文件 / Test delete file
+func TestDeleteFile(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建测试文件 / Create test file
+	testFile := filepath.Join(tempDir, "test_delete.txt")
+	err := os.WriteFile(testFile, []byte("content"), 0644)
+	require.NoError(t, err)
+
+	// 删除文件 / Delete file
+	resp, err := service.DeleteFile(&types.DeleteFileRequest{Path: "test_delete.txt"})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证文件已删除 / Verify file deleted
+	_, err = os.Stat(testFile)
+	assert.True(t, os.IsNotExist(err))
+}
+
+// TestDeleteFileNotExists 测试删除不存在的文件 / Test delete non-existent file
+func TestDeleteFileNotExists(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	resp, err := service.DeleteFile(&types.DeleteFileRequest{Path: "not_exists.txt"})
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+// TestDeleteDirectory 测试删除目录 / Test delete directory
+func TestDeleteDirectory(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建测试目录和文件 / Create test directory and files
+	testDir := filepath.Join(tempDir, "test_dir")
+	err := os.MkdirAll(testDir, 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(testDir, "file.txt"), []byte("content"), 0644)
+	require.NoError(t, err)
+
+	// 递归删除目录 / Delete directory recursively
+	resp, err := service.DeleteDirectory(&types.DeleteDirectoryRequest{
+		Path:      "test_dir",
+		Recursive: true,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证目录已删除 / Verify directory deleted
+	_, err = os.Stat(testDir)
+	assert.True(t, os.IsNotExist(err))
+}
+
+// TestDeleteDirectoryNonRecursive 测试非递归删除非空目录 / Test non-recursive delete non-empty directory
+func TestDeleteDirectoryNonRecursive(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建非空目录 / Create non-empty directory
+	testDir := filepath.Join(tempDir, "non_empty_dir")
+	err := os.MkdirAll(testDir, 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(testDir, "file.txt"), []byte("content"), 0644)
+	require.NoError(t, err)
+
+	// 非递归删除应该失败 / Non-recursive delete should fail
+	resp, err := service.DeleteDirectory(&types.DeleteDirectoryRequest{
+		Path:      "non_empty_dir",
+		Recursive: false,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+// TestCopyFileExplicit 测试显式复制文件 / Test explicit copy file
+func TestCopyFileExplicit(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建源文件 / Create source file
+	srcFile := filepath.Join(tempDir, "src.txt")
+	err := os.WriteFile(srcFile, []byte("source content"), 0644)
+	require.NoError(t, err)
+
+	// 复制文件 / Copy file
+	resp, err := service.CopyFile(&types.CopyFileRequest{
+		Source:      "src.txt",
+		Destination: "dst.txt",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证目标文件存在且内容正确 / Verify destination file exists with correct content
+	dstFile := filepath.Join(tempDir, "dst.txt")
+	content, err := os.ReadFile(dstFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "source content", string(content))
+}
+
+// TestCopyDirectoryExplicit 测试显式复制目录 / Test explicit copy directory
+func TestCopyDirectoryExplicit(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建源目录和文件 / Create source directory and files
+	srcDir := filepath.Join(tempDir, "src_dir")
+	err := os.MkdirAll(srcDir, 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(srcDir, "file.txt"), []byte("content"), 0644)
+	require.NoError(t, err)
+
+	// 复制目录 / Copy directory
+	resp, err := service.CopyDirectory(&types.CopyDirectoryRequest{
+		Source:      "src_dir",
+		Destination: "dst_dir",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证目标目录和文件存在 / Verify destination directory and files exist
+	dstFile := filepath.Join(tempDir, "dst_dir", "file.txt")
+	content, err := os.ReadFile(dstFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "content", string(content))
+}
+
+// TestMoveFile 测试移动文件 / Test move file
+func TestMoveFile(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建源文件 / Create source file
+	srcFile := filepath.Join(tempDir, "move_src.txt")
+	err := os.WriteFile(srcFile, []byte("move content"), 0644)
+	require.NoError(t, err)
+
+	// 移动文件 / Move file
+	resp, err := service.MoveFile(&types.MoveFileRequest{
+		Source:      "move_src.txt",
+		Destination: "move_dst.txt",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证源文件不存在 / Verify source file doesn't exist
+	_, err = os.Stat(srcFile)
+	assert.True(t, os.IsNotExist(err))
+
+	// 验证目标文件存在且内容正确 / Verify destination file exists with correct content
+	dstFile := filepath.Join(tempDir, "move_dst.txt")
+	content, err := os.ReadFile(dstFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "move content", string(content))
+}
+
+// TestMoveDirectory 测试移动目录 / Test move directory
+func TestMoveDirectory(t *testing.T) {
+	service, tempDir := setupTestService(t)
+	defer cleanupTestService(t, tempDir)
+
+	// 创建源目录和文件 / Create source directory and files
+	srcDir := filepath.Join(tempDir, "move_src_dir")
+	err := os.MkdirAll(srcDir, 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(srcDir, "file.txt"), []byte("dir content"), 0644)
+	require.NoError(t, err)
+
+	// 移动目录 / Move directory
+	resp, err := service.MoveDirectory(&types.MoveDirectoryRequest{
+		Source:      "move_src_dir",
+		Destination: "move_dst_dir",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证源目录不存在 / Verify source directory doesn't exist
+	_, err = os.Stat(srcDir)
+	assert.True(t, os.IsNotExist(err))
+
+	// 验证目标目录和文件存在 / Verify destination directory and files exist
+	dstFile := filepath.Join(tempDir, "move_dst_dir", "file.txt")
+	content, err := os.ReadFile(dstFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "dir content", string(content))
 }

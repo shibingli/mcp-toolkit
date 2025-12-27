@@ -48,7 +48,7 @@
 //   - pkg/transport：传输层实现（HTTP、SSE、Stdio）
 //   - pkg/client：MCP 客户端实现
 //   - pkg/utils：工具函数（JSON、Recovery 等）
-//   - internal/services/filesystem：文件系统服务实现
+//   - internal/services/sandbox：沙箱服务实现（文件系统、命令执行、系统信息等）
 //
 // # 配置
 //

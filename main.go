@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"mcp-toolkit/internal/services/filesystem"
+	"mcp-toolkit/internal/services/sandbox"
 	"mcp-toolkit/pkg/transport"
 	"mcp-toolkit/pkg/types"
 	"mcp-toolkit/pkg/utils/json"
@@ -90,13 +90,13 @@ func main() {
 		logger.Fatal("failed to get absolute path of sandbox directory", zap.Error(err))
 	}
 
-	// 创建文件系统服务 / Create filesystem service
-	fsService, err := filesystem.NewService(absSandboxDir, logger)
+	// 创建沙箱服务 / Create sandbox service
+	sandboxService, err := sandbox.NewService(absSandboxDir, logger)
 	if err != nil {
-		logger.Fatal("failed to create filesystem service", zap.Error(err))
+		logger.Fatal("failed to create sandbox service", zap.Error(err))
 	}
 
-	logger.Info("filesystem service initialized", zap.String("sandbox_dir", absSandboxDir))
+	logger.Info("sandbox service initialized", zap.String("sandbox_dir", absSandboxDir))
 
 	// 创建MCP服务器 / Create MCP server
 	mcpServer := mcp.NewServer(
@@ -111,8 +111,8 @@ func main() {
 		},
 	)
 
-	// 注册文件系统工具 / Register filesystem tools
-	fsService.RegisterTools(mcpServer)
+	// 注册沙箱工具 / Register sandbox tools
+	sandboxService.RegisterTools(mcpServer)
 
 	logger.Info("MCP tools registered successfully")
 
@@ -146,7 +146,7 @@ func main() {
 				return
 			}
 			// 注册工具到工具注册表 / Register tools to tool registry
-			fsService.RegisterToolsToRegistry(httpServer.GetToolRegistry())
+			sandboxService.RegisterToolsToRegistry(httpServer.GetToolRegistry())
 			errChan <- httpServer.Start(ctx, mcpServer)
 
 		case types.TransportSSE:
@@ -166,7 +166,7 @@ func main() {
 				return
 			}
 			// 注册工具到工具注册表 / Register tools to tool registry
-			fsService.RegisterToolsToRegistry(sseServer.GetToolRegistry())
+			sandboxService.RegisterToolsToRegistry(sseServer.GetToolRegistry())
 			errChan <- sseServer.Start(ctx, mcpServer)
 
 		case types.TransportStdio:
