@@ -6,7 +6,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-toolkit"
+name = "eric-mcp-toolkit"
 version = "1.0.0"
 description = "A cross-platform file system operations toolkit based on Model Context Protocol (MCP)"
 readme = "README.md"
