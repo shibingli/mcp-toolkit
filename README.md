@@ -105,7 +105,7 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
-uv tool install mcp-toolkit
+uv tool install mcp-sandbox-toolkit
 ```
 
 #### 使用安装脚本 / Using Installation Script
