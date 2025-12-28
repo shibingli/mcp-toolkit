@@ -130,3 +130,86 @@ jobs:
             dist/checksums.txt
           retention-days: 90
 
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
+    environment:
+      name: pypi
+      url: https://pypi.org/project/eric-mcp-toolkit/
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine hatchling
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(git describe --tags --always --dirty | sed 's/^v//')
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "### Publishing Version: \`$VERSION\` to PyPI" >> $GITHUB_STEP_SUMMARY
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          echo "Updated pyproject.toml version to: $VERSION"
+
+      - name: Update version in installer.py
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          sed -i "s/^VERSION = .*/VERSION = \"$VERSION\"/" python/mcp_toolkit_wrapper/installer.py
+          echo "Updated installer.py version to: $VERSION"
+
+      - name: Build package
+        run: |
+          python -m build
+          echo "### Built Packages" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/ >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Check package
+        run: |
+          python -m twine check dist/*
+          echo "✅ Package validation passed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload dist/* --verbose
+          echo "✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install with: \`pip install eric-mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "or: \`uv tool install eric-mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Python artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-${{ steps.get_version.outputs.VERSION }}
+          path: dist/
+          retention-days: 90
+

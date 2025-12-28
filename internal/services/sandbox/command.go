@@ -327,6 +327,13 @@ func (s *Service) isCommandBlacklisted(command string) bool {
 // isDirectoryBlacklisted 检查目录是否在黑名单中 / Check if directory is in blacklist
 func (s *Service) isDirectoryBlacklisted(dir string) bool {
 	dir = filepath.Clean(dir)
+	sandboxDir := filepath.Clean(s.sandboxDir)
+
+	// 如果目录在沙箱内，则不检查黑名单（沙箱目录本身及其子目录都是安全的）
+	// If directory is within sandbox, skip blacklist check (sandbox directory and its subdirectories are safe)
+	if strings.HasPrefix(dir, sandboxDir) {
+		return false
+	}
 
 	// 检查自定义黑名单 / Check custom blacklist
 	for _, blacklisted := range s.blacklistDirs {
