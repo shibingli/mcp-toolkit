@@ -11,12 +11,18 @@ import urllib.request
 import tarfile
 import zipfile
 import json
+import importlib.metadata
 from pathlib import Path
 from typing import Optional
 
 # 配置 / Configuration
 REPO = "shibingli/mcp-toolkit"
-VERSION = "1.1.0"  # 与 pyproject.toml 保持一致
+
+# 动态获取版本号 / Get version dynamically
+try:
+    VERSION = importlib.metadata.version("mcp-sandbox-toolkit")
+except importlib.metadata.PackageNotFoundError:
+    VERSION = "0.0.0-dev"
 
 
 def get_platform_info() -> tuple[str, str]:

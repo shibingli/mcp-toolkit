@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-sandbox-toolkit"
-version = "1.1.0"
+version = "0.0.0"  # This will be automatically updated by GitHub Actions during release
 description = "A cross-platform sandboxed file system operations toolkit based on Model Context Protocol (MCP)"
 readme = "README.md"
 requires-python = ">=3.8"

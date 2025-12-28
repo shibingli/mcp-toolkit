@@ -175,12 +175,7 @@ jobs:
           VERSION=${{ steps.get_version.outputs.VERSION }}
           sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           echo "Updated pyproject.toml version to: $VERSION"
-
-      - name: Update version in installer.py
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          sed -i "s/^VERSION = .*/VERSION = \"$VERSION\"/" python/mcp_toolkit_wrapper/installer.py
-          echo "Updated installer.py version to: $VERSION"
+          cat pyproject.toml | grep "^version"
 
       - name: Build package
         run: |

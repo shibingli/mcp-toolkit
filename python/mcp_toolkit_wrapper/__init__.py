@@ -8,7 +8,15 @@ This is a Python wrapper for installing and managing MCP Toolkit via uv/pipx.
 The actual binary will be automatically downloaded during installation.
 """
 
-__version__ = "1.1.0"
+import importlib.metadata
+
+try:
+    # Try to get version from package metadata (when installed)
+    __version__ = importlib.metadata.version("mcp-sandbox-toolkit")
+except importlib.metadata.PackageNotFoundError:
+    # Fallback version for development
+    __version__ = "0.0.0-dev"
+
 __author__ = "MCP Toolkit Authors"
 __license__ = "Apache-2.0"
 
