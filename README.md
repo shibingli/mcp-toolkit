@@ -106,7 +106,29 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
 uv tool install mcp-sandbox-toolkit
+
+# 运行程序 / Run the program
+mcp-toolkit --help
+
+# 或使用 uvx 直接运行（无需安装）/ Or use uvx to run directly (no installation needed)
+uvx mcp-sandbox-toolkit --help
 ```
+
+**配置 PATH (如果需要) / Configure PATH (if needed)**:
+
+如果安装后无法直接运行 `mcp-toolkit` 命令，需要将 `~/.local/bin` (Linux/macOS) 添加到 PATH：
+
+```bash
+# Bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Zsh
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+详细的安装和配置说明请参考 [INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)
 
 #### 使用安装脚本 / Using Installation Script
 

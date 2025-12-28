@@ -8,7 +8,7 @@ This is a Python wrapper for installing and managing MCP Toolkit via uv/pipx.
 The actual binary will be automatically downloaded during installation.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "MCP Toolkit Authors"
 __license__ = "Apache-2.0"
 

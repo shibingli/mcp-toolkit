@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Optional
 
 # 配置 / Configuration
-REPO = "shibingli/mcp-toolkit"  # 请替换为你的 GitHub 仓库
-VERSION = "1.0.0"  # 与 pyproject.toml 保持一致
+REPO = "shibingli/mcp-toolkit"
+VERSION = "1.1.0"  # 与 pyproject.toml 保持一致
 
 
 def get_platform_info() -> tuple[str, str]:
@@ -205,12 +205,34 @@ def install_binary(version: Optional[str] = None) -> Path:
     
     print(f"✓ MCP Toolkit installed successfully!")
     print(f"  Binary: {final_binary}")
-    
-    # 检查 PATH / Check PATH
-    if str(install_dir) not in os.environ.get("PATH", ""):
+
+    # 检查 PATH 并提供使用说明 / Check PATH and provide usage instructions
+    path_env = os.environ.get("PATH", "")
+    if str(install_dir) not in path_env:
         print(f"\n⚠ Warning: {install_dir} is not in your PATH")
-        print(f"  Add it to your PATH to use 'mcp-toolkit' command directly")
-    
+        print(f"\nTo use 'mcp-toolkit' command directly, add it to your PATH:")
+
+        if sys.platform == "win32":
+            print(f"\n  PowerShell:")
+            print(f'  $env:Path += ";{install_dir}"')
+            print(f"\n  Or add permanently via System Environment Variables")
+        else:
+            shell = os.environ.get("SHELL", "")
+            if "zsh" in shell:
+                config_file = "~/.zshrc"
+            elif "fish" in shell:
+                config_file = "~/.config/fish/config.fish"
+            else:
+                config_file = "~/.bashrc"
+
+            print(f"\n  Add this line to your {config_file}:")
+            print(f'  export PATH="$HOME/.local/bin:$PATH"')
+            print(f"\n  Then reload your shell:")
+            print(f"  source {config_file}")
+    else:
+        print(f"\n✓ {install_dir} is already in your PATH")
+        print(f"  You can now use 'mcp-toolkit' command directly")
+
     return final_binary
 
 
