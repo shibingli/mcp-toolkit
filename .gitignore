@@ -34,7 +34,7 @@ mcp-toolkit
 mcp-toolkit.exe
 mcp-toolkit-client
 mcp-toolkit-client.exe
-sandbox/
+/sandbox/
 *.log
 
 # Build artifacts / 构建产物
