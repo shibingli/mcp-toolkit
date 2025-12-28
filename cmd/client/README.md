@@ -192,7 +192,7 @@ func testNewTool(ctx context.Context, mcpClient client.Client) TestResult {
 
 - [完整测试文档](../../docs/CLIENT_TEST.md) / [Complete Test Documentation](../../docs/CLIENT_TEST.md)
 - [MCP客户端文档](../../docs/CLIENT.md) / [MCP Client Documentation](../../docs/CLIENT.md)
-- [快速开始指南](../../docs/QUICKSTART.md) / [Quick Start Guide](../../docs/QUICKSTART.md)
+- [快速开始指南](../../docs/GETTING_STARTED.md) / [Getting Started Guide](../../docs/GETTING_STARTED.md)
 
 ## 许可证 / License
 

@@ -107,7 +107,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
 uv tool install mcp-sandbox-toolkit
 
-# 运行程序 / Run the program
+# 运行程序（两个命令都可以）/ Run the program (both commands work)
+mcp-sandbox-toolkit --help
 mcp-toolkit --help
 
 # 或使用 uvx 直接运行（无需安装）/ Or use uvx to run directly (no installation needed)
@@ -128,7 +129,7 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-详细的安装和配置说明请参考 [INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)
+详细的安装和配置说明请参考 [INSTALLATION.md](docs/INSTALLATION.md)
 
 #### 使用安装脚本 / Using Installation Script
 

@@ -95,7 +95,7 @@
 // 更多文档请参考：
 //
 //   - README.md：项目概述和快速开始
-//   - docs/QUICKSTART.md：快速启动指南
+//   - docs/GETTING_STARTED.md：快速开始指南
 //   - docs/TRANSPORT.md：传输方式详细说明
 //   - docs/CLIENT.md：客户端使用指南
 //   - docs/COMMAND_EXECUTION.md：命令执行功能说明
