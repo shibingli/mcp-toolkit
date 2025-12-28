@@ -1,0 +1,49 @@
+# pyproject.toml - Python 包装配置，用于通过 uv/pipx 安装
+# Python wrapper configuration for installation via uv/pipx
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-toolkit"
+version = "1.0.0"
+description = "A cross-platform file system operations toolkit based on Model Context Protocol (MCP)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "MCP Toolkit Authors", email = "your-email@example.com"},
+]
+keywords = ["mcp", "model-context-protocol", "file-system", "toolkit", "sandbox"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Filesystems",
+]
+
+[project.urls]
+Homepage = "https://github.com/shibingli/mcp-toolkit"
+Documentation = "https://github.com/shibingli/mcp-toolkit/blob/main/README.md"
+Repository = "https://github.com/shibingli/mcp-toolkit"
+Issues = "https://github.com/shibingli/mcp-toolkit/issues"
+Changelog = "https://github.com/shibingli/mcp-toolkit/releases"
+
+[project.scripts]
+mcp-toolkit = "mcp_toolkit_wrapper:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/mcp_toolkit_wrapper"]
+
+[tool.uv]
+dev-dependencies = []
+

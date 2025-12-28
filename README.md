@@ -96,9 +96,42 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 
 ## 安装 / Installation
 
+### 快速安装 / Quick Installation
+
+#### 使用 uv (推荐) / Using uv (Recommended)
+
+```bash
+# 安装 uv (如果还没有安装) / Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
+uv tool install mcp-toolkit
+```
+
+#### 使用安装脚本 / Using Installation Script
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/shibingli/mcp-toolkit/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/shibingli/mcp-toolkit/main/scripts/install.ps1" -OutFile "install.ps1"
+.\install.ps1
+```
+
+#### 手动下载 / Manual Download
+
+从 [Releases 页面](https://github.com/shibingli/mcp-toolkit/releases) 下载对应平台的二进制文件。
+
+Download the binary for your platform from the [Releases page](https://github.com/shibingli/mcp-toolkit/releases).
+
+### 从源码编译 / Build from Source
+
 ```bash
 # 克隆仓库 / Clone repository
-git clone <repository-url>
+git clone https://github.com/shibingli/mcp-toolkit.git
 cd mcp-toolkit
 
 # 安装依赖 / Install dependencies
@@ -107,9 +140,13 @@ go mod download
 # 编译(使用sonic JSON库以获得最佳性能) / Build (using sonic JSON library for best performance)
 go build -tags="sonic" -o mcp-toolkit main.go
 
-# 或使用标准JSON库编译 / Or build with standard JSON library
-go build -o mcp-toolkit main.go
+# 或使用 Makefile / Or use Makefile
+make build
 ```
+
+更多安装方式请参考 [安装指南](docs/INSTALLATION.md)。
+
+For more installation methods, see [Installation Guide](docs/INSTALLATION.md).
 
 ## 使用方法 / Usage
 
