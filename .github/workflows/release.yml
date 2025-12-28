@@ -137,7 +137,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
     environment:
       name: pypi
-      url: https://pypi.org/project/eric-mcp-toolkit/
+      url: https://pypi.org/project/mcp-toolkit/
 
     steps:
       - name: Checkout code
@@ -203,8 +203,8 @@ jobs:
           python -m twine upload dist/* --verbose
           echo "✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Install with: \`pip install eric-mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
-          echo "or: \`uv tool install eric-mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "Install with: \`pip install mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "or: \`uv tool install mcp-toolkit\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload Python artifacts
         uses: actions/upload-artifact@v4
