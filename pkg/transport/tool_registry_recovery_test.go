@@ -166,4 +166,3 @@ func TestToolRegistry_CallTool_WithoutRecoveryHandler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }
-

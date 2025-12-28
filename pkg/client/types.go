@@ -95,4 +95,3 @@ type Content struct {
 	// Data 数据内容(当type为其他类型时) / Data content (when type is other)
 	Data interface{} `json:"data,omitempty"`
 }
-
