@@ -65,8 +65,14 @@ build() {
     # 创建压缩包 / Create archive
     cd ${OUTPUT_DIR}
     if [ "$GOOS" = "windows" ]; then
-        zip -r "${PROJECT_NAME}-${VERSION}-${GOOS}-${GOARCH}.zip" "${PROJECT_NAME}-${GOOS}-${GOARCH}"
+        # Windows 使用 zip / Windows uses zip
+        if command -v zip >/dev/null 2>&1; then
+            zip -r "${PROJECT_NAME}-${VERSION}-${GOOS}-${GOARCH}.zip" "${PROJECT_NAME}-${GOOS}-${GOARCH}"
+        else
+            echo "Warning: zip command not found, skipping archive creation for ${GOOS}/${GOARCH}"
+        fi
     else
+        # Linux/macOS 使用 tar.gz / Linux/macOS uses tar.gz
         tar -czf "${PROJECT_NAME}-${VERSION}-${GOOS}-${GOARCH}.tar.gz" "${PROJECT_NAME}-${GOOS}-${GOARCH}"
     fi
     cd ..
@@ -91,6 +97,13 @@ build linux arm64
 build darwin amd64
 build darwin arm64
 
+# 生成校验和文件 / Generate checksums
+echo ""
+echo "Generating checksums..."
+cd ${OUTPUT_DIR}
+sha256sum *.zip *.tar.gz 2>/dev/null > checksums.txt || true
+cd ..
+
 echo ""
 echo "========================================="
 echo "Build completed successfully!"
@@ -98,5 +111,13 @@ echo "Output directory: ${OUTPUT_DIR}"
 echo "========================================="
 echo ""
 echo "Generated files:"
-ls -lh ${OUTPUT_DIR}/*.{zip,tar.gz} 2>/dev/null || true
+echo ""
+echo "Windows packages (zip):"
+ls -lh ${OUTPUT_DIR}/*windows*.zip 2>/dev/null || echo "  No Windows packages found"
+echo ""
+echo "Linux/macOS packages (tar.gz):"
+ls -lh ${OUTPUT_DIR}/*{linux,darwin}*.tar.gz 2>/dev/null || echo "  No Linux/macOS packages found"
+echo ""
+echo "Checksums:"
+ls -lh ${OUTPUT_DIR}/checksums.txt 2>/dev/null || echo "  No checksums file found"
 

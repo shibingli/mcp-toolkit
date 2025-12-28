@@ -1,10 +1,10 @@
 @echo off
-REM 跨平台构建脚本 (Windows) / Cross-platform build script (Windows)
-REM 用于编译 Windows、Linux、macOS 的二进制文件
+REM Cross-platform build script for Windows
+REM Builds binaries for Windows, Linux, and macOS
 
 setlocal enabledelayedexpansion
 
-REM 项目信息 / Project information
+REM Project information
 set PROJECT_NAME=mcp-toolkit
 set VERSION=%VERSION%
 if "%VERSION%"=="" (
@@ -16,41 +16,50 @@ for /f "tokens=*" %%i in ('powershell -Command "Get-Date -Format 'yyyy-MM-dd_HH:
 for /f "tokens=*" %%i in ('git rev-parse --short HEAD 2^>nul') do set GIT_COMMIT=%%i
 if "%GIT_COMMIT%"=="" set GIT_COMMIT=unknown
 
-REM 构建标签 / Build tags
+REM Build tags
 set BUILD_TAGS=sonic
 
-REM 输出目录 / Output directory
+REM Output directory
 set OUTPUT_DIR=dist
 if exist %OUTPUT_DIR% rmdir /s /q %OUTPUT_DIR%
 mkdir %OUTPUT_DIR%
 
-REM 构建信息 / Build information
+REM Build information
 set LDFLAGS=-s -w -X main.Version=%VERSION% -X main.BuildTime=%BUILD_TIME% -X main.GitCommit=%GIT_COMMIT%
 
 echo =========================================
-echo Building %PROJECT_NAME% %VERSION%
+echo Building %PROJECT_NAME% v%VERSION%
 echo Build Time: %BUILD_TIME%
 echo Git Commit: %GIT_COMMIT%
 echo =========================================
 echo.
+echo Building for all platforms...
+echo.
 
-REM 构建 Windows amd64
+REM Build Windows amd64
 call :build windows amd64
 
-REM 构建 Windows arm64
+REM Build Windows arm64
 call :build windows arm64
 
-REM 构建 Linux amd64
+REM Build Linux amd64
 call :build linux amd64
 
-REM 构建 Linux arm64
+REM Build Linux arm64
 call :build linux arm64
 
-REM 构建 macOS amd64
+REM Build macOS amd64
 call :build darwin amd64
 
-REM 构建 macOS arm64
+REM Build macOS arm64
 call :build darwin arm64
+
+REM Generate checksums
+echo.
+echo Generating checksums...
+cd %OUTPUT_DIR%
+powershell -Command "Get-ChildItem -Include *.zip,*.tar.gz -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  ' + $_.Path.Split('\')[-1] } | Out-File -Encoding ASCII checksums.txt"
+cd ..
 
 echo.
 echo =========================================
@@ -59,7 +68,15 @@ echo Output directory: %OUTPUT_DIR%
 echo =========================================
 echo.
 echo Generated files:
-dir /b %OUTPUT_DIR%\*.zip %OUTPUT_DIR%\*.tar.gz 2>nul
+echo.
+echo Windows packages (zip):
+dir /b %OUTPUT_DIR%\*windows*.zip 2>nul
+echo.
+echo Linux/macOS packages (tar.gz):
+dir /b %OUTPUT_DIR%\*linux*.tar.gz %OUTPUT_DIR%\*darwin*.tar.gz 2>nul
+echo.
+echo Checksums:
+dir /b %OUTPUT_DIR%\checksums.txt 2>nul
 
 goto :eof
 
@@ -75,15 +92,15 @@ mkdir %OUTPUT_PATH%
 
 echo Building for %GOOS%/%GOARCH%...
 
-REM 构建 / Build
+REM Build
 set CGO_ENABLED=0
 go build -tags="%BUILD_TAGS%" -ldflags="%LDFLAGS%" -o "%OUTPUT_PATH%\%OUTPUT_NAME%" .
 
-REM 复制文件 / Copy files
+REM Copy files
 copy README.md %OUTPUT_PATH%\ >nul
 copy LICENSE %OUTPUT_PATH%\ >nul
 
-REM 创建压缩包 / Create archive
+REM Create archive
 cd %OUTPUT_DIR%
 if "%GOOS%"=="windows" (
     powershell -Command "Compress-Archive -Path '%PROJECT_NAME%-%GOOS%-%GOARCH%' -DestinationPath '%PROJECT_NAME%-%VERSION%-%GOOS%-%GOARCH%.zip' -Force"
@@ -92,8 +109,6 @@ if "%GOOS%"=="windows" (
 )
 cd ..
 
-echo √ Built %GOOS%/%GOARCH%
-echo.
-
+echo   Built %GOOS%/%GOARCH%
 goto :eof
 

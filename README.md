@@ -457,10 +457,6 @@ The project provides a complete client testing tool that automatically tests all
 # 编译服务器和客户端 / Build server and client
 go build -tags="sonic" -o mcp-toolkit .
 go build -tags="sonic" -o mcp-toolkit-client ./cmd/client
-
-# 运行自动化测试脚本 / Run automated test script
-chmod +x scripts/test_mcp.sh
-./scripts/test_mcp.sh
 ```
 
 **Windows:**
@@ -468,9 +464,6 @@ chmod +x scripts/test_mcp.sh
 # 编译服务器和客户端 / Build server and client
 go build -tags="sonic" -o mcp-toolkit.exe .
 go build -tags="sonic" -o mcp-toolkit-client.exe ./cmd/client
-
-# 运行自动化测试脚本 / Run automated test script
-.\scripts\test_mcp.bat
 ```
 
 #### 手动测试 / Manual Testing
