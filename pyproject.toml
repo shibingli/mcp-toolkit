@@ -39,6 +39,7 @@ Issues = "https://github.com/shibingli/mcp-toolkit/issues"
 Changelog = "https://github.com/shibingli/mcp-toolkit/releases"
 
 [project.scripts]
+mcp-sandbox-toolkit = "mcp_toolkit_wrapper:main"
 mcp-toolkit = "mcp_toolkit_wrapper:main"
 
 [tool.hatch.build.targets.wheel]
