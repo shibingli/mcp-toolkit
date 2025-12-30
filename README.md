@@ -107,6 +107,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
 uv tool install mcp-sandbox-toolkit
 
+# 更新到最新版本 / Upgrade to the latest version
+uv tool upgrade mcp-sandbox-toolkit
+
 # 运行程序（两个命令都可以）/ Run the program (both commands work)
 mcp-sandbox-toolkit --help
 mcp-toolkit --help
