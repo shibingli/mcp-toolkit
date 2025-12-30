@@ -22,6 +22,9 @@ func setupHTTPServer(t *testing.T) (*HTTPTransportServer, *mcp.Server) {
 	logger := zap.NewNop()
 	config := types.DefaultHTTPConfig()
 	config.Port = 18080 // 使用测试端口 / Use test port
+	// 禁用会话管理和SSE以保持向后兼容 / Disable session management and SSE for backward compatibility
+	config.EnableSessionManagement = false
+	config.EnableSSE = false
 
 	server, err := NewHTTPTransportServer(config, logger)
 	require.NoError(t, err)
@@ -92,6 +95,42 @@ func TestNewHTTPTransportServer(t *testing.T) {
 		assert.Equal(t, 30, server.config.ReadTimeout)
 		assert.Equal(t, 30, server.config.WriteTimeout)
 	})
+
+	t.Run("with negative timeout", func(t *testing.T) {
+		config := &types.HTTPConfig{
+			Port:         8080,
+			ReadTimeout:  -1,
+			WriteTimeout: 0,
+		}
+		server, err := NewHTTPTransportServer(config, logger)
+		assert.Error(t, err)
+		assert.Nil(t, server)
+		assert.Contains(t, err.Error(), "invalid read timeout")
+	})
+
+	t.Run("with negative session timeout", func(t *testing.T) {
+		config := &types.HTTPConfig{
+			Port:                    8080,
+			EnableSessionManagement: true,
+			SessionTimeout:          -1,
+		}
+		server, err := NewHTTPTransportServer(config, logger)
+		assert.Error(t, err)
+		assert.Nil(t, server)
+		assert.Contains(t, err.Error(), "invalid session timeout")
+	})
+
+	t.Run("with negative SSE heartbeat interval", func(t *testing.T) {
+		config := &types.HTTPConfig{
+			Port:                 8080,
+			EnableSSE:            true,
+			SSEHeartbeatInterval: -1,
+		}
+		server, err := NewHTTPTransportServer(config, logger)
+		assert.Error(t, err)
+		assert.Nil(t, server)
+		assert.Contains(t, err.Error(), "invalid SSE heartbeat interval")
+	})
 }
 
 func TestHTTPTransportServer_HandleMCPRequest(t *testing.T) {
@@ -112,6 +151,7 @@ func TestHTTPTransportServer_HandleMCPRequest(t *testing.T) {
 
 		httpReq := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader(reqJSON))
 		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Accept", "application/json")
 		w := httptest.NewRecorder()
 
 		server.handleMCPRequest(w, httpReq)
@@ -139,6 +179,7 @@ func TestHTTPTransportServer_HandleMCPRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		httpReq := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader(reqJSON))
+		httpReq.Header.Set("Accept", "application/json")
 		w := httptest.NewRecorder()
 
 		server.handleMCPRequest(w, httpReq)
@@ -153,6 +194,7 @@ func TestHTTPTransportServer_HandleMCPRequest(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		httpReq := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader([]byte("invalid json")))
+		httpReq.Header.Set("Accept", "application/json")
 		w := httptest.NewRecorder()
 
 		server.handleMCPRequest(w, httpReq)
@@ -177,6 +219,7 @@ func TestHTTPTransportServer_HandleMCPRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		httpReq := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader(reqJSON))
+		httpReq.Header.Set("Accept", "application/json")
 		w := httptest.NewRecorder()
 
 		server.handleMCPRequest(w, httpReq)
@@ -408,12 +451,12 @@ func TestHTTPTransportServer_HandleInitialize(t *testing.T) {
 		Method:  "initialize",
 	}
 
-	result := server.handleInitialize(req)
+	result := server.handleInitialize(req, nil)
 	assert.NotNil(t, result)
 
 	resultMap, ok := result.(map[string]interface{})
 	assert.True(t, ok)
-	assert.Equal(t, "2024-11-05", resultMap["protocolVersion"])
+	assert.Equal(t, types.ProtocolVersion, resultMap["protocolVersion"])
 	assert.NotNil(t, resultMap["capabilities"])
 	assert.NotNil(t, resultMap["serverInfo"])
 }

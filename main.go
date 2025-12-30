@@ -52,10 +52,23 @@ func main() {
 	// 解析命令行参数 / Parse command line arguments
 	sandboxDir := flag.String("sandbox", types.GetDefaultSandboxDir(), "沙箱目录路径 / Sandbox directory path")
 	transportType := flag.String("transport", "stdio", "传输类型: stdio, http, sse / Transport type: stdio, http, sse")
+
+	// HTTP 基础参数 / HTTP basic parameters
 	httpHost := flag.String("http-host", "127.0.0.1", "HTTP监听地址 / HTTP listen address")
 	httpPort := flag.Int("http-port", 8080, "HTTP监听端口 / HTTP listen port")
+
+	// HTTP Streamable 参数 / HTTP Streamable parameters
+	httpEnableSession := flag.Bool("http-enable-session", true, "启用会话管理 / Enable session management")
+	httpDisableSession := flag.Bool("http-disable-session", false, "禁用会话管理 / Disable session management")
+	httpSessionTimeout := flag.Int("http-session-timeout", 1800, "会话超时(秒) / Session timeout (seconds)")
+	httpEnableSSE := flag.Bool("http-enable-sse", true, "启用SSE流 / Enable SSE streaming")
+	httpDisableSSE := flag.Bool("http-disable-sse", false, "禁用SSE流 / Disable SSE streaming")
+	httpSSEHeartbeat := flag.Int("http-sse-heartbeat", 30, "SSE心跳间隔(秒) / SSE heartbeat interval (seconds)")
+
+	// SSE 参数 / SSE parameters
 	sseHost := flag.String("sse-host", "127.0.0.1", "SSE监听地址 / SSE listen address")
 	ssePort := flag.Int("sse-port", 8081, "SSE监听端口 / SSE listen port")
+
 	flag.Parse()
 
 	// 初始化日志记录器 / Initialize logger
@@ -130,16 +143,31 @@ func main() {
 		switch types.TransportType(*transportType) {
 		case types.TransportHTTP:
 			// 启动HTTP传输服务器 / Start HTTP transport server
+			// 处理会话管理和SSE标志 / Handle session management and SSE flags
+			enableSession := *httpEnableSession && !*httpDisableSession
+			enableSSE := *httpEnableSSE && !*httpDisableSSE
+
 			httpConfig := &types.HTTPConfig{
-				Host:           *httpHost,
-				Port:           *httpPort,
-				Path:           "/mcp",
-				EnableCORS:     true,
-				AllowedOrigins: []string{"*"},
-				ReadTimeout:    30,
-				WriteTimeout:   30,
-				MaxHeaderBytes: 1 << 20,
+				Host:                    *httpHost,
+				Port:                    *httpPort,
+				Path:                    "/mcp",
+				EnableCORS:              true,
+				AllowedOrigins:          []string{"*"},
+				ReadTimeout:             30,
+				WriteTimeout:            30,
+				MaxHeaderBytes:          1 << 20,
+				EnableSessionManagement: enableSession,
+				SessionTimeout:          *httpSessionTimeout,
+				EnableSSE:               enableSSE,
+				SSEHeartbeatInterval:    *httpSSEHeartbeat,
 			}
+
+			logger.Info("HTTP transport configuration",
+				zap.Bool("session_management", enableSession),
+				zap.Int("session_timeout", *httpSessionTimeout),
+				zap.Bool("sse_enabled", enableSSE),
+				zap.Int("sse_heartbeat", *httpSSEHeartbeat))
+
 			httpServer, err := transport.NewHTTPTransportServer(httpConfig, logger)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to create HTTP transport server: %w", err)

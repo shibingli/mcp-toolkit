@@ -68,6 +68,27 @@ type HTTPConfig struct {
 
 	// MaxHeaderBytes 最大请求头字节数 / Maximum header bytes
 	MaxHeaderBytes int `json:"max_header_bytes"`
+
+	// EnableSessionManagement 是否启用会话管理 / Whether to enable session management
+	EnableSessionManagement bool `json:"enable_session_management"`
+
+	// SessionTimeout 会话超时时间(秒) / Session timeout in seconds
+	SessionTimeout int `json:"session_timeout"`
+
+	// EnableSSE 是否启用SSE流支持 / Whether to enable SSE streaming support
+	EnableSSE bool `json:"enable_sse"`
+
+	// SSEHeartbeatInterval SSE心跳间隔(秒) / SSE heartbeat interval in seconds
+	SSEHeartbeatInterval int `json:"sse_heartbeat_interval"`
+
+	// EnableRateLimit 是否启用请求频率限制 / Whether to enable rate limiting
+	EnableRateLimit bool `json:"enable_rate_limit"`
+
+	// RateLimitRequests 时间窗口内允许的最大请求数 / Max requests allowed in time window
+	RateLimitRequests int `json:"rate_limit_requests"`
+
+	// RateLimitWindow 频率限制时间窗口(秒) / Rate limit time window in seconds
+	RateLimitWindow int `json:"rate_limit_window"`
 }
 
 // SSEConfig SSE传输配置 / SSE transport configuration
@@ -92,19 +113,35 @@ type SSEConfig struct {
 
 	// MaxConnections 最大连接数 / Maximum connections
 	MaxConnections int `json:"max_connections"`
+
+	// EnableRateLimit 是否启用请求频率限制 / Whether to enable rate limiting
+	EnableRateLimit bool `json:"enable_rate_limit"`
+
+	// RateLimitRequests 时间窗口内允许的最大请求数 / Max requests allowed in time window
+	RateLimitRequests int `json:"rate_limit_requests"`
+
+	// RateLimitWindow 频率限制时间窗口(秒) / Rate limit time window in seconds
+	RateLimitWindow int `json:"rate_limit_window"`
 }
 
 // DefaultHTTPConfig 返回默认HTTP配置 / Return default HTTP configuration
 func DefaultHTTPConfig() *HTTPConfig {
 	return &HTTPConfig{
-		Host:           "127.0.0.1",
-		Port:           8080,
-		Path:           "/mcp",
-		EnableCORS:     true,
-		AllowedOrigins: []string{"*"},
-		ReadTimeout:    30,
-		WriteTimeout:   30,
-		MaxHeaderBytes: 1 << 20, // 1MB
+		Host:                    "127.0.0.1",
+		Port:                    8080,
+		Path:                    "/mcp",
+		EnableCORS:              true,
+		AllowedOrigins:          []string{"*"},
+		ReadTimeout:             30,
+		WriteTimeout:            30,
+		MaxHeaderBytes:          1 << 20, // 1MB
+		EnableSessionManagement: true,
+		SessionTimeout:          1800, // 30 minutes (更合理的默认值 / More reasonable default)
+		EnableSSE:               true,
+		SSEHeartbeatInterval:    30,
+		EnableRateLimit:         false, // 默认禁用 / Disabled by default
+		RateLimitRequests:       100,   // 每分钟100个请求 / 100 requests per minute
+		RateLimitWindow:         60,    // 60秒窗口 / 60 second window
 	}
 }
 
@@ -118,6 +155,9 @@ func DefaultSSEConfig() *SSEConfig {
 		AllowedOrigins:    []string{"*"},
 		HeartbeatInterval: 30,
 		MaxConnections:    100,
+		EnableRateLimit:   false, // 默认禁用 / Disabled by default
+		RateLimitRequests: 100,   // 每分钟100个请求 / 100 requests per minute
+		RateLimitWindow:   60,    // 60秒窗口 / 60 second window
 	}
 }
 

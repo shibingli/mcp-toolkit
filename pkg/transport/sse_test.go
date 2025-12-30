@@ -90,6 +90,248 @@ func TestNewSSETransportServer(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 30, server.config.HeartbeatInterval)
 	})
+
+	t.Run("with negative heartbeat interval", func(t *testing.T) {
+		config := &types.SSEConfig{
+			Port:              8081,
+			HeartbeatInterval: -1,
+		}
+		server, err := NewSSETransportServer(config, logger)
+		assert.Error(t, err)
+		assert.Nil(t, server)
+		assert.Contains(t, err.Error(), "invalid heartbeat interval")
+	})
+
+	t.Run("with negative max connections", func(t *testing.T) {
+		config := &types.SSEConfig{
+			Port:           8081,
+			MaxConnections: -1,
+		}
+		server, err := NewSSETransportServer(config, logger)
+		assert.Error(t, err)
+		assert.Nil(t, server)
+		assert.Contains(t, err.Error(), "invalid max connections")
+	})
+}
+
+func TestSSETransportServer_ProtocolVersion(t *testing.T) {
+	server, _ := setupSSEServer(t)
+
+	tests := []struct {
+		name           string
+		version        string
+		expectError    bool
+		expectedStatus int
+	}{
+		{
+			name:           "latest version 2025-12-26",
+			version:        "2025-12-26",
+			expectError:    false,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "version 2025-06-18",
+			version:        "2025-06-18",
+			expectError:    false,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "version 2025-03-26",
+			version:        "2025-03-26",
+			expectError:    false,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "version 2024-11-05",
+			version:        "2024-11-05",
+			expectError:    false,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "no version header (backward compatible)",
+			version:        "",
+			expectError:    false,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "unsupported version",
+			version:        "2020-01-01",
+			expectError:    true,
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := types.MCPRequest{
+				JSONRPC: "2.0",
+				ID:      1,
+				Method:  "initialize",
+				Params: map[string]interface{}{
+					"protocolVersion": types.ProtocolVersion,
+				},
+			}
+
+			reqJSON, err := json.Marshal(req)
+			require.NoError(t, err)
+
+			httpReq := httptest.NewRequest(http.MethodPost, "/sse/message", bytes.NewReader(reqJSON))
+			httpReq.Header.Set("Content-Type", "application/json")
+			if tt.version != "" {
+				httpReq.Header.Set("MCP-Protocol-Version", tt.version)
+			}
+
+			// 测试版本验证方法 / Test version validation method
+			err = server.validateProtocolVersion(httpReq)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestSSETransportServer_ConnectionManagement(t *testing.T) {
+	server, _ := setupSSEServer(t)
+
+	t.Run("add connection successfully", func(t *testing.T) {
+		conn := &SSEConnection{
+			id:        "test-conn-1",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+
+		err := server.addConnection(conn)
+		assert.NoError(t, err)
+
+		// 验证连接已添加 / Verify connection added
+		retrieved, ok := server.getConnection("test-conn-1")
+		assert.True(t, ok)
+		assert.Equal(t, conn.id, retrieved.id)
+	})
+
+	t.Run("remove connection successfully", func(t *testing.T) {
+		conn := &SSEConnection{
+			id:        "test-conn-2",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+
+		err := server.addConnection(conn)
+		require.NoError(t, err)
+
+		server.removeConnection("test-conn-2")
+
+		// 验证连接已移除 / Verify connection removed
+		_, ok := server.getConnection("test-conn-2")
+		assert.False(t, ok)
+	})
+
+	t.Run("connection limit enforcement", func(t *testing.T) {
+		// 创建一个有限制的服务器 / Create server with limit
+		config := types.DefaultSSEConfig()
+		config.Port = 18082
+		config.MaxConnections = 2
+		limitedServer, err := NewSSETransportServer(config, zap.NewNop())
+		require.NoError(t, err)
+
+		// 添加第一个连接 / Add first connection
+		conn1 := &SSEConnection{
+			id:        "limit-conn-1",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+		err = limitedServer.addConnection(conn1)
+		assert.NoError(t, err)
+
+		// 添加第二个连接 / Add second connection
+		conn2 := &SSEConnection{
+			id:        "limit-conn-2",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+		err = limitedServer.addConnection(conn2)
+		assert.NoError(t, err)
+
+		// 尝试添加第三个连接应该失败 / Third connection should fail
+		conn3 := &SSEConnection{
+			id:        "limit-conn-3",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+		err = limitedServer.addConnection(conn3)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "maximum connections reached")
+	})
+
+	t.Run("send message to connection", func(t *testing.T) {
+		conn := &SSEConnection{
+			id:        "test-conn-msg",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now(),
+			lastPing:  time.Now(),
+		}
+
+		err := server.addConnection(conn)
+		require.NoError(t, err)
+		defer server.removeConnection(conn.id)
+
+		msg := &types.SSEMessage{
+			Event: "test",
+			Data:  "test data",
+		}
+
+		err = server.sendToConnection(conn.id, msg)
+		assert.NoError(t, err)
+
+		// 验证消息已发送 / Verify message sent
+		select {
+		case received := <-conn.messages:
+			assert.Equal(t, msg.Event, received.Event)
+			assert.Equal(t, msg.Data, received.Data)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for message")
+		}
+	})
+
+	t.Run("cleanup stale connections", func(t *testing.T) {
+		// 创建一个短超时的服务器 / Create server with short timeout
+		config := types.DefaultSSEConfig()
+		config.Port = 18083
+		config.HeartbeatInterval = 1 // 1秒心跳 / 1 second heartbeat
+		cleanupServer, err := NewSSETransportServer(config, zap.NewNop())
+		require.NoError(t, err)
+
+		// 添加一个过期的连接 / Add stale connection
+		staleConn := &SSEConnection{
+			id:        "stale-conn",
+			messages:  make(chan *types.SSEMessage, 10),
+			done:      make(chan struct{}),
+			createdAt: time.Now().Add(-10 * time.Minute),
+			lastPing:  time.Now().Add(-10 * time.Minute),
+		}
+		err = cleanupServer.addConnection(staleConn)
+		require.NoError(t, err)
+
+		// 运行清理 / Run cleanup
+		cleanupServer.cleanupStaleConnections()
+
+		// 验证过期连接已被移除 / Verify stale connection removed
+		_, ok := cleanupServer.getConnection("stale-conn")
+		assert.False(t, ok)
+	})
 }
 
 func TestSSETransportServer_HandleMCPMessage(t *testing.T) {
@@ -299,7 +541,7 @@ func TestSSETransportServer_HandleInitialize(t *testing.T) {
 
 	resultMap, ok := result.(map[string]interface{})
 	assert.True(t, ok)
-	assert.Equal(t, "2024-11-05", resultMap["protocolVersion"])
+	assert.Equal(t, types.ProtocolVersion, resultMap["protocolVersion"])
 	assert.NotNil(t, resultMap["capabilities"])
 	assert.NotNil(t, resultMap["serverInfo"])
 }

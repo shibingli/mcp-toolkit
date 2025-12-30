@@ -22,7 +22,8 @@ import (
 
 const (
 	// ProtocolVersion MCP协议版本 / MCP protocol version
-	ProtocolVersion = "2024-11-05"
+	// 使用最新的协议版本 / Use the latest protocol version
+	ProtocolVersion = "2025-12-26"
 
 	// ServerName MCP服务器名称 / MCP server name
 	ServerName = "mcp-toolkit"
@@ -33,6 +34,15 @@ const (
 	// DefaultSandboxDir 默认沙箱目录（相对路径） / Default sandbox directory (relative path)
 	DefaultSandboxDir = "./sandbox"
 )
+
+// SupportedProtocolVersions 支持的MCP协议版本列表 / Supported MCP protocol versions
+// 按从新到旧的顺序排列 / Ordered from newest to oldest
+var SupportedProtocolVersions = []string{
+	"2025-12-26", // 最新版本 / Latest version
+	"2025-06-18", // Streamable HTTP 支持 / Streamable HTTP support
+	"2025-03-26", // 早期版本 / Earlier version
+	"2024-11-05", // 初始版本 / Initial version
+}
 
 // GetDefaultSandboxDir 根据操作系统返回默认的沙箱目录路径 / Get default sandbox directory path based on OS
 // Linux/MacOS: /tmp/mcp_sandbox_toolkit

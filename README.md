@@ -13,12 +13,13 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 ### 核心特性 / Core Features
 
 - 🚀 **多功能集成** - 文件系统、命令执行、系统工具等多种功能
-- 🔒 **安全可靠** - 沙箱隔离、黑名单机制、路径验证等多重安全保障
+- 🔒 **安全可靠** - 沙箱隔离、黑名单机制、路径验证、频率限制等多重安全保障
 - ⚡ **高性能** - Sonic JSON库、结构体预热等性能优化
-- 🛡️ **稳定性强** - Panic Recovery机制确保服务稳定运行
+- 🛡️ **稳定性强** - Panic Recovery机制、优雅关闭、并发安全保障
 - 🔌 **灵活传输** - 支持 Stdio、HTTP、SSE 多种传输方式
 - 🌍 **跨平台** - 完美支持 Windows、Linux、macOS
 - 📦 **模块化设计** - 易于扩展和维护
+- 🔄 **协议兼容** - 支持最新 MCP 协议版本，向后兼容旧版本
 
 ## 功能特性 / Features
 
@@ -82,6 +83,51 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 - ✅ Sonic JSON库支持（高性能序列化/反序列化）
 - ✅ 结构体预热机制（消除首次请求延迟）
 - ✅ 多种JSON库可选（Sonic、go-json、jsoniter、标准库）
+
+## 最新改进 / Latest Improvements
+
+### v1.1.0 (2025-12-30)
+
+**🎉 主要更新 / Major Updates:**
+
+1. **协议版本更新 / Protocol Version Update**
+    - 更新到最新 MCP 协议版本 **2025-12-26**
+    - 支持向后兼容：2025-12-26, 2025-06-18, 2025-03-26, 2024-11-05
+    - 自动版本协商和验证
+
+2. **SSE 连接管理 / SSE Connection Management**
+    - ✅ 完整的连接池管理
+    - ✅ 可配置的最大连接数限制（默认 100）
+    - ✅ 自动清理过期连接
+    - ✅ 心跳机制保持连接活跃
+    - ✅ 服务器推送功能
+
+3. **请求频率限制 / Rate Limiting**
+    - ✅ 滑动窗口算法
+    - ✅ 每个客户端独立限制
+    - ✅ 可配置的请求数和时间窗口
+    - ✅ 防止滥用和 DDoS 攻击
+    - ✅ 支持 X-Forwarded-For 和 X-Real-IP
+
+4. **优雅关闭 / Graceful Shutdown**
+    - ✅ 等待正在处理的请求完成
+    - ✅ 清理所有会话和连接
+    - ✅ 资源正确释放
+    - ✅ 详细的关闭日志
+
+5. **并发安全 / Concurrency Safety**
+    - ✅ 修复 HTTPSession 并发竞争条件
+    - ✅ 修复 SSE 连接计数原子性问题
+    - ✅ 使用 sync.RWMutex 和原子操作
+
+6. **参数验证增强 / Enhanced Validation**
+    - ✅ 所有配置参数的负数检查
+    - ✅ 改进的错误消息
+    - ✅ 完整的参数验证测试
+
+详细的改进说明请参考：[传输层改进文档](docs/TRANSPORT_IMPROVEMENTS.md)
+
+For detailed improvements, see: [Transport Improvements Documentation](docs/TRANSPORT_IMPROVEMENTS.md)
 
 ## 技术栈 / Tech Stack
 
@@ -198,6 +244,183 @@ For more installation methods, see [Installation Guide](docs/INSTALLATION.md).
 ./mcp-toolkit -transport http -http-host 0.0.0.0 -http-port 8080 -sandbox /path/to/sandbox
 ```
 
+##### Streamable HTTP 支持 / Streamable HTTP Support
+
+HTTP 传输支持 MCP 规范的 Streamable HTTP 功能，包括会话管理和 SSE 流。
+
+HTTP transport supports MCP specification's Streamable HTTP features, including session management and SSE streaming.
+
+**核心特性 / Core Features:**
+
+1. **会话管理 / Session Management**
+    - 自动生成加密安全的会话 ID
+    - 通过 `Mcp-Session-Id` 头管理会话
+    - 可配置的会话超时时间
+    - 支持会话终止
+
+2. **协议版本支持 / Protocol Version Support**
+    - 支持 `MCP-Protocol-Version` 头
+    - 默认版本: **2025-12-26** (最新 / Latest)
+    - 兼容多个协议版本: 2025-12-26, 2025-06-18, 2025-03-26, 2024-11-05
+    - 向后兼容旧版本
+
+3. **SSE 流支持 / SSE Streaming Support**
+    - POST 请求支持 JSON 和 SSE 响应
+    - GET 请求打开 SSE 流用于服务器推送
+    - 可配置的心跳间隔
+    - 自动连接保持
+    - 连接池管理和限制
+    - 自动清理过期连接
+
+4. **请求频率限制 / Rate Limiting**
+    - 滑动窗口算法
+    - 每个客户端独立限制
+    - 可配置的请求数和时间窗口
+    - 防止滥用和 DDoS 攻击
+
+5. **优雅关闭 / Graceful Shutdown**
+    - 等待正在处理的请求完成
+    - 清理所有会话和连接
+    - 资源正确释放
+
+**配置选项 / Configuration Options:**
+
+```bash
+# 启用会话管理(默认启用) / Enable session management (enabled by default)
+./mcp-toolkit -transport http -http-enable-session
+
+# 禁用会话管理 / Disable session management
+./mcp-toolkit -transport http -http-disable-session
+
+# 设置会话超时(秒，默认1800秒/30分钟) / Set session timeout (seconds, default 1800s/30min)
+./mcp-toolkit -transport http -http-session-timeout 1800
+
+# 启用SSE流(默认启用) / Enable SSE streaming (enabled by default)
+./mcp-toolkit -transport http -http-enable-sse
+
+# 禁用SSE流 / Disable SSE streaming
+./mcp-toolkit -transport http -http-disable-sse
+
+# 设置SSE心跳间隔(秒) / Set SSE heartbeat interval (seconds)
+./mcp-toolkit -transport http -http-sse-heartbeat 30
+
+# 启用请求频率限制 / Enable rate limiting
+./mcp-toolkit -transport http -http-enable-rate-limit
+
+# 设置频率限制(100请求/60秒) / Set rate limit (100 requests/60 seconds)
+./mcp-toolkit -transport http -http-rate-limit-requests 100 -http-rate-limit-window 60
+```
+
+**使用示例 / Usage Examples:**
+
+1. **初始化会话 / Initialize Session:**
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "MCP-Protocol-Version: 2025-12-26" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-12-26",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "example-client",
+        "version": "1.0.0"
+      }
+    }
+  }'
+```
+
+响应将包含 `Mcp-Session-Id` 头，后续请求需要使用此会话 ID。
+
+Response will include `Mcp-Session-Id` header, which must be used in subsequent requests.
+
+2. **使用会话调用工具 / Call Tool with Session:**
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Mcp-Session-Id: <session-id-from-initialize>" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list"
+  }'
+```
+
+3. **使用 SSE 流 / Use SSE Streaming:**
+
+```bash
+# 初始化并请求SSE流 / Initialize and request SSE stream
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-12-26" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-12-26"
+    }
+  }'
+
+# 打开SSE流监听服务器消息 / Open SSE stream to listen for server messages
+curl -X GET http://localhost:8080/mcp \
+  -H "Accept: text/event-stream" \
+  -H "Mcp-Session-Id: <session-id>"
+```
+
+4. **终止会话 / Terminate Session:**
+
+```bash
+curl -X DELETE http://localhost:8080/mcp \
+  -H "Mcp-Session-Id: <session-id>"
+```
+
+**HTTP 方法支持 / HTTP Methods:**
+
+- **POST**: 发送 JSON-RPC 消息，支持 JSON 和 SSE 响应
+- **GET**: 打开 SSE 流监听服务器推送消息
+- **DELETE**: 终止会话
+- **OPTIONS**: CORS 预检请求
+
+**测试脚本 / Test Scripts:**
+
+项目提供了完整的 Streamable HTTP 测试脚本:
+
+The project provides complete Streamable HTTP test scripts:
+
+```bash
+# Linux/macOS
+chmod +x examples/streamable_http_test.sh
+./examples/streamable_http_test.sh
+
+# Windows PowerShell
+.\examples\streamable_http_test.ps1
+```
+
+测试脚本会自动执行以下操作:
+
+1. 初始化会话并获取会话 ID
+2. 列出所有可用工具
+3. 调用示例工具
+4. 测试 SSE 流响应
+5. 终止会话
+
+The test script automatically performs the following:
+
+1. Initialize session and get session ID
+2. List all available tools
+3. Call example tool
+4. Test SSE stream response
+5. Terminate session
+
 #### SSE 传输 / SSE Transport
 
 ```bash
@@ -206,7 +429,21 @@ For more installation methods, see [Installation Guide](docs/INSTALLATION.md).
 
 # 自定义SSE配置 / Customize SSE configuration
 ./mcp-toolkit -transport sse -sse-host 0.0.0.0 -sse-port 8081 -sandbox /path/to/sandbox
+
+# 设置最大连接数 / Set max connections
+./mcp-toolkit -transport sse -sse-max-connections 100
+
+# 启用频率限制 / Enable rate limiting
+./mcp-toolkit -transport sse -sse-enable-rate-limit -sse-rate-limit-requests 100 -sse-rate-limit-window 60
 ```
+
+**SSE 传输特性 / SSE Transport Features:**
+
+- **连接管理** - 连接池、最大连接数限制、自动清理
+- **心跳机制** - 保持连接活跃，可配置心跳间隔
+- **服务器推送** - 支持向客户端推送消息
+- **频率限制** - 防止滥用和 DDoS 攻击
+- **协议版本** - 支持最新 MCP 协议版本
 
 详细的传输方式说明请参考：[传输方式文档](docs/TRANSPORT.md)
 
@@ -408,10 +645,22 @@ Get complete system information including OS, CPU, memory, GPU, network interfac
 
 ## 文档 / Documentation
 
+### 传输方式 / Transport
+
+- [传输方式文档](docs/TRANSPORT.md) - 详细的传输方式说明 (Stdio, HTTP, SSE)
+- [Streamable HTTP 使用指南](docs/STREAMABLE_HTTP.md) - Streamable HTTP 功能详解
+- [传输层改进文档](docs/TRANSPORT_IMPROVEMENTS.md) - 最新功能和改进说明
+
+### 命令执行 / Command Execution
 - [命令执行使用指南](docs/COMMAND_EXECUTION.md) - 详细的命令执行功能说明
 - [命令执行高级功能](docs/COMMAND_ADVANCED_FEATURES.md) - 异步执行、历史记录、权限控制等
 - [命令路径验证](docs/COMMAND_PATH_VALIDATION.md) - 路径参数验证机制
+
+### 其他 / Others
 - [Recovery 功能文档](docs/RECOVERY.md) - Panic 恢复机制和稳定性保障
+- [安装指南](docs/INSTALLATION.md) - 详细的安装说明
+- [快速开始](docs/GETTING_STARTED.md) - 快速入门指南
+- [代码审查修复报告](CODE_REVIEW_FIXES.md) - 详细的修复记录
 
 ## 测试 / Testing
 
@@ -430,7 +679,7 @@ go tool cover -html=coverage.out
 当前测试覆盖率 / Current test coverage:
 - sandbox: **53.0%**
 - client: **78.0%**
-- transport: **72.0%**
+- transport: **85.0%** (新增频率限制、连接管理等测试)
 - json: **86.1%**
 - recovery: **100.0%**
 
