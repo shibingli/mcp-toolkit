@@ -3,11 +3,14 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      # 只在推送符合 vXX.YY.ZZ 或 vXX.YY.ZZ-CCC 格式的 tag 时触发
+      # 例如: v1.0.0, v1.2.3, v2.0.0-alpha, v1.5.0-beta.1
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., v1.0.0)'
+        description: 'Version to release (e.g., v1.0.0, v1.0.0-alpha)'
         required: false
         type: string
 
