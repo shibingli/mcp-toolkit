@@ -50,7 +50,7 @@ func initLogger() (*zap.Logger, error) {
 
 func main() {
 	// 解析命令行参数 / Parse command line arguments
-	sandboxDir := flag.String("sandbox", types.DefaultSandboxDir, "沙箱目录路径 / Sandbox directory path")
+	sandboxDir := flag.String("sandbox", types.GetDefaultSandboxDir(), "沙箱目录路径 / Sandbox directory path")
 	transportType := flag.String("transport", "stdio", "传输类型: stdio, http, sse / Transport type: stdio, http, sse")
 	httpHost := flag.String("http-host", "127.0.0.1", "HTTP监听地址 / HTTP listen address")
 	httpPort := flag.Int("http-port", 8080, "HTTP监听端口 / HTTP listen port")

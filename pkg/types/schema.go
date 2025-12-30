@@ -97,18 +97,18 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"create_file": {
 		Type:        "object",
-		Description: "Create a new file with the specified content. If the file already exists, it will be overwritten. Parent directories will be created automatically if they don't exist.",
+		Description: "CREATE A NEW FILE with specified content. Use this tool when you need to: 1) Create a new file from scratch, 2) Write initial content to a file, 3) Overwrite an existing file completely. The tool automatically creates parent directories if they don't exist. IMPORTANT: This is the primary tool for file creation - use it whenever you need to create or completely replace a file's content. Keywords: create, new file, write file, save file, make file, generate file.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The file path to create. Can be absolute or relative to the current working directory. Example: 'src/main.go', '/tmp/test.txt', 'docs/readme.md'",
+				Description: "The file path to create. Can be absolute or relative to the current working directory. Supports nested paths - parent directories will be created automatically. Examples: 'src/main.go' (creates src/ directory if needed), '/tmp/test.txt' (absolute path), 'docs/api/readme.md' (creates docs/api/ directories).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"src/main.go", "config/settings.json", "README.md"},
+				Examples:    []any{"src/main.go", "config/settings.json", "README.md", "data/output.txt", "logs/app.log"},
 			},
 			"content": {
 				Type:        "string",
-				Description: "The content to write to the file. Can be any text content including code, configuration, or plain text.",
-				Examples:    []any{"Hello, World!", "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}"},
+				Description: "The content to write to the file. Can be any text content including source code, configuration files, JSON/YAML data, plain text, or documentation. The content will completely replace any existing file content.",
+				Examples:    []any{"Hello, World!", "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}", "{\"name\": \"config\", \"version\": \"1.0\"}", "# Documentation\n\nThis is a readme file."},
 			},
 		},
 		Required: []string{"path", "content"},
@@ -116,13 +116,13 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"create_directory": {
 		Type:        "object",
-		Description: "Create a new directory. Parent directories will be created automatically if they don't exist (similar to 'mkdir -p').",
+		Description: "CREATE NEW DIRECTORIES and folder structures. Automatically creates all parent directories if they don't exist (like 'mkdir -p'). Use this tool when you need to: 1) Create new folders, 2) Set up directory structures, 3) Organize project layout, 4) Create nested directories, 5) Prepare storage locations. The tool creates the entire path if needed. Keywords: create directory, mkdir, make folder, new folder, create dir, make directory.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The directory path to create. Can be absolute or relative to the current working directory. Example: 'src/utils', '/tmp/mydir', 'docs/api'",
+				Description: "The directory path to create. Can be absolute or relative. Supports nested paths - all parent directories will be created automatically. Examples: 'src/utils' (creates src/ and src/utils/), '/tmp/mydir' (absolute path), 'docs/api/v1' (creates docs/, docs/api/, and docs/api/v1/).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"src/utils", "docs/api", "build/output"},
+				Examples:    []any{"src/utils", "docs/api", "build/output", "data/cache", "logs/2024"},
 			},
 		},
 		Required: []string{"path"},
@@ -130,13 +130,13 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"read_file": {
 		Type:        "object",
-		Description: "Read and return the content of a file. Use this to view file contents before making modifications or to understand existing code/configuration.",
+		Description: "READ AND RETRIEVE the complete content of a file. Use this tool when you need to: 1) View or inspect file contents, 2) Read source code before modification, 3) Check configuration files, 4) Analyze existing data, 5) Understand file structure before editing. This is the primary tool for reading files - use it whenever you need to see what's inside a file. Keywords: read, view, show, display, get content, inspect file, check file, open file.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The file path to read. Can be absolute or relative to the current working directory. The file must exist.",
+				Description: "The file path to read. Can be absolute or relative to the current working directory. The file must exist. Examples: 'src/main.go' (read source code), 'package.json' (read configuration), 'README.md' (read documentation), 'data/input.csv' (read data file).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"src/main.go", "package.json", "README.md"},
+				Examples:    []any{"src/main.go", "package.json", "README.md", "config.yaml", ".env", "data/users.json"},
 			},
 		},
 		Required: []string{"path"},
@@ -144,17 +144,18 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"write_file": {
 		Type:        "object",
-		Description: "Write content to an existing file, completely replacing its current content. Use 'create_file' for new files. For partial modifications, read the file first, modify the content, then write back.",
+		Description: "WRITE OR UPDATE content to an existing file, completely replacing its current content. Use this tool when you need to: 1) Update an existing file with new content, 2) Modify and save changes to a file, 3) Replace file content after editing. WORKFLOW: First use 'read_file' to get current content, modify it, then use 'write_file' to save. For new files, use 'create_file' instead. Keywords: write, update, modify, save, edit file, change file, replace content.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The file path to write to. The file should already exist. Use 'create_file' if the file doesn't exist.",
+				Description: "The file path to write to. The file should already exist (use 'create_file' for new files). Can be absolute or relative path. Examples: 'src/main.go' (update source code), 'config.yaml' (update configuration), 'index.html' (update web page).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"src/main.go", "config.yaml", "index.html"},
+				Examples:    []any{"src/main.go", "config.yaml", "index.html", "package.json", "README.md"},
 			},
 			"content": {
 				Type:        "string",
-				Description: "The new content to write to the file. This will completely replace the existing content.",
+				Description: "The new content to write to the file. This will completely replace the existing content. Make sure to include all content you want to keep, as the old content will be lost.",
+				Examples:    []any{"Updated content", "package main\n\nfunc main() {\n\tfmt.Println(\"Updated\")\n}", "{\"version\": \"2.0\", \"updated\": true}"},
 			},
 		},
 		Required: []string{"path", "content"},
@@ -162,13 +163,13 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"delete": {
 		Type:        "object",
-		Description: "[RECOMMENDED] Delete a file or directory. This tool automatically detects whether the path is a file or directory and handles it appropriately. For directories, it performs recursive deletion. This is the preferred tool for all deletion operations.",
+		Description: "[RECOMMENDED - PRIMARY DELETION TOOL] DELETE any file or directory automatically. This is the MAIN deletion tool - use it for ALL deletion operations. The tool intelligently detects whether the path is a file or directory and handles it appropriately. For directories, it performs recursive deletion (removes all contents). Use this tool when you need to: 1) Remove any file, 2) Remove any directory and its contents, 3) Clean up temporary files, 4) Delete build artifacts, 5) Remove old backups. Keywords: delete, remove, erase, clean, rm, unlink, destroy, eliminate.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The path of the file or directory to delete. The tool will automatically detect the type and delete accordingly.",
+				Description: "The path of the file or directory to delete. Can be a single file, empty directory, or directory with contents. The tool automatically detects the type and deletes accordingly. Examples: 'temp.txt' (delete file), 'build/' (delete directory and all contents), 'old_config.json' (delete config file), 'node_modules/' (delete dependencies).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"temp.txt", "build/", "old_config.json"},
+				Examples:    []any{"temp.txt", "build/", "old_config.json", "*.log", "cache/", "dist/"},
 			},
 		},
 		Required: []string{"path"},
@@ -209,19 +210,19 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"copy": {
 		Type:        "object",
-		Description: "[RECOMMENDED] Copy a file or directory to a new location. This tool automatically detects whether the source is a file or directory and handles it appropriately. For directories, it performs recursive copy. This is the preferred tool for all copy operations.",
+		Description: "[RECOMMENDED - PRIMARY COPY TOOL] COPY files or directories to a new location. This is the MAIN copy tool - use it for ALL copy operations. Automatically detects whether source is a file or directory and handles appropriately. For directories, performs recursive copy (copies all contents). Use this tool when you need to: 1) Duplicate files, 2) Create backups, 3) Copy entire directories, 4) Clone project structures, 5) Make file/folder copies. Keywords: copy, duplicate, clone, backup, cp, replicate.",
 		Properties: map[string]Property{
 			"source": {
 				Type:        "string",
-				Description: "The source path of the file or directory to copy.",
+				Description: "The source path of the file or directory to copy. Can be a single file or entire directory tree. Examples: 'src/main.go' (copy file), 'config/' (copy directory and all contents), 'template.html' (copy template file).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"src/main.go", "config/", "template.html"},
+				Examples:    []any{"src/main.go", "config/", "template.html", "docs/", "package.json"},
 			},
 			"destination": {
 				Type:        "string",
-				Description: "The destination path where the file or directory will be copied to.",
+				Description: "The destination path where the file or directory will be copied to. If source is a file, destination should be the target file path. If source is a directory, destination should be the target directory path. Examples: 'backup/main.go' (copy file to backup), 'config_backup/' (copy directory), 'index.html' (rename while copying).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"backup/main.go", "config_backup/", "index.html"},
+				Examples:    []any{"backup/main.go", "config_backup/", "index.html", "docs_v2/", "package.backup.json"},
 			},
 		},
 		Required: []string{"source", "destination"},
@@ -269,19 +270,19 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"move": {
 		Type:        "object",
-		Description: "[RECOMMENDED] Move or rename a file or directory. This tool automatically detects whether the source is a file or directory and handles it appropriately. This is the preferred tool for all move/rename operations.",
+		Description: "[RECOMMENDED - PRIMARY MOVE/RENAME TOOL] MOVE or RENAME files and directories. This is the MAIN move/rename tool - use it for ALL move and rename operations. Automatically detects whether source is a file or directory and handles appropriately. Use this tool when you need to: 1) Rename files or directories, 2) Move files to different locations, 3) Reorganize project structure, 4) Relocate directories, 5) Change file/folder names. Keywords: move, rename, mv, relocate, transfer, reorg, reorganize.",
 		Properties: map[string]Property{
 			"source": {
 				Type:        "string",
-				Description: "The source path of the file or directory to move.",
+				Description: "The source path of the file or directory to move or rename. Can be a file or directory. Examples: 'old_name.txt' (file to rename), 'src/old_module/' (directory to move), 'temp.log' (file to relocate).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"old_name.txt", "src/old_module/", "temp.log"},
+				Examples:    []any{"old_name.txt", "src/old_module/", "temp.log", "draft.md", "old_config/"},
 			},
 			"destination": {
 				Type:        "string",
-				Description: "The destination path where the file or directory will be moved to.",
+				Description: "The destination path where the file or directory will be moved to. This can be a new name in the same directory (rename) or a different location (move). Examples: 'new_name.txt' (rename file), 'src/new_module/' (move directory), 'logs/app.log' (move and rename file).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"new_name.txt", "src/new_module/", "logs/app.log"},
+				Examples:    []any{"new_name.txt", "src/new_module/", "logs/app.log", "published.md", "config/"},
 			},
 		},
 		Required: []string{"source", "destination"},
@@ -329,13 +330,13 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"list_directory": {
 		Type:        "object",
-		Description: "List all files and subdirectories in a directory. Returns file names, types (file/directory), sizes, and modification times. Useful for exploring directory structure.",
+		Description: "LIST AND EXPLORE directory contents. Shows all files and subdirectories with detailed information including names, types (file/directory), sizes, and modification times. Use this tool when you need to: 1) See what files are in a directory, 2) Explore project structure, 3) Find specific files, 4) Check directory contents before operations, 5) Understand folder organization. This is the primary tool for directory exploration. Keywords: list, ls, dir, show files, directory contents, browse, explore folder, view directory.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The directory path to list. Use '.' for current directory, '..' for parent directory.",
+				Description: "The directory path to list. Use '.' for current directory, '..' for parent directory, or specify any directory path. Examples: '.' (current directory), 'src/' (source directory), '/home/user/projects' (absolute path), '..' (parent directory).",
 				MinLength:   intPtr(1),
-				Examples:    []any{".", "src/", "/home/user/projects"},
+				Examples:    []any{".", "src/", "/home/user/projects", "..", "docs/", "build/"},
 			},
 		},
 		Required: []string{"path"},
@@ -343,19 +344,19 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"search_files": {
 		Type:        "object",
-		Description: "Search for files matching a pattern within a directory. Supports glob patterns with wildcards (* for any characters, ? for single character). Searches recursively through subdirectories.",
+		Description: "SEARCH AND FIND files matching patterns within directories. Recursively searches through all subdirectories using powerful glob patterns. Use this tool when you need to: 1) Find files by extension (*.go, *.js), 2) Locate specific files by name pattern, 3) Search for test files, 4) Find configuration files, 5) Discover files across project. Supports wildcards: * (any characters), ? (single character), ** (any directories). Keywords: search, find, locate, grep files, filter, pattern match, glob.",
 		Properties: map[string]Property{
 			"path": {
 				Type:        "string",
-				Description: "The directory path to search in. The search will include all subdirectories.",
+				Description: "The directory path to start searching from. The search will recursively include all subdirectories. Use '.' for current directory, or specify any directory path. Examples: '.' (search from current), 'src/' (search in source), '/home/user/projects' (absolute path).",
 				MinLength:   intPtr(1),
-				Examples:    []any{".", "src/", "/home/user/projects"},
+				Examples:    []any{".", "src/", "/home/user/projects", "docs/", "tests/"},
 			},
 			"pattern": {
 				Type:        "string",
-				Description: "The search pattern using glob syntax. Use * for any characters, ? for single character. Examples: '*.go' for all Go files, 'test_*.py' for test files, '**/README.md' for all README files.",
+				Description: "The search pattern using glob syntax. Wildcards: * matches any characters, ? matches single character, ** matches any directories. Examples: '*.go' (all Go files), 'test_*.py' (test files starting with test_), '**/*.md' (all Markdown files in any subdirectory), 'config.*' (config files with any extension).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"*.go", "*.js", "test_*.py", "**/*.md", "config.*"},
+				Examples:    []any{"*.go", "*.js", "test_*.py", "**/*.md", "config.*", "*.json", "**/*.test.js"},
 			},
 		},
 		Required: []string{"path", "pattern"},
@@ -407,12 +408,12 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"get_current_time": {
 		Type:        "object",
-		Description: "Get the current system time. Can optionally specify a timezone. Returns formatted datetime, timezone information, and Unix timestamp.",
+		Description: "GET CURRENT DATE AND TIME with timezone support. Returns formatted datetime string, timezone information, and Unix timestamp. Use this tool when you need to: 1) Get current time, 2) Check time in different timezones, 3) Get timestamps for logging, 4) Schedule tasks, 5) Time-based operations. Supports all IANA timezone names. Keywords: time, date, now, current time, timestamp, timezone, clock, datetime.",
 		Properties: map[string]Property{
 			"timezone": {
 				Type:        "string",
-				Description: "IANA timezone name. If empty or not provided, uses the system's local timezone. Common values: 'Asia/Shanghai', 'America/New_York', 'Europe/London', 'UTC'.",
-				Examples:    []any{"Asia/Shanghai", "America/New_York", "Europe/London", "UTC", "Asia/Tokyo"},
+				Description: "IANA timezone name (optional). If empty or not provided, uses the system's local timezone. Common timezones: 'Asia/Shanghai' (China), 'America/New_York' (US East), 'Europe/London' (UK), 'UTC' (Universal), 'Asia/Tokyo' (Japan), 'America/Los_Angeles' (US West), 'Europe/Paris' (France).",
+				Examples:    []any{"Asia/Shanghai", "America/New_York", "Europe/London", "UTC", "Asia/Tokyo", "America/Los_Angeles"},
 			},
 		},
 		Required: []string{},
@@ -422,32 +423,32 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"execute_command": {
 		Type:        "object",
-		Description: "Execute a shell command synchronously and return the output. Use this for running CLI tools like git, npm, python, etc. WARNING: Do NOT use this for file operations (create, delete, copy, move) - use the dedicated file tools instead.",
+		Description: "EXECUTE SHELL COMMANDS synchronously and get output. Use this tool to run CLI tools, build scripts, version control, package managers, and system commands. Common use cases: 1) Run git commands (status, commit, push), 2) Execute npm/pip/go commands (install, build, test), 3) Run Python/Node.js scripts, 4) Execute build tools (make, gradle, maven), 5) Run system commands (ls, cat, grep). IMPORTANT: Do NOT use for file operations (create/delete/copy/move) - use dedicated file tools instead. The command runs synchronously and waits for completion. Keywords: execute, run, command, shell, bash, terminal, cli, script, git, npm, python.",
 		Properties: map[string]Property{
 			"command": {
 				Type:        "string",
-				Description: "The command to execute. This is the main executable name without arguments. Examples: 'git', 'npm', 'python', 'go', 'ls'.",
+				Description: "The command executable name (without arguments). This is the program to run. Examples: 'git' (version control), 'npm' (Node.js package manager), 'python' (Python interpreter), 'go' (Go compiler), 'ls' (list files), 'make' (build tool), 'docker' (container tool).",
 				MinLength:   intPtr(1),
-				Examples:    []any{"git", "npm", "python", "go", "ls", "cat"},
+				Examples:    []any{"git", "npm", "python", "go", "ls", "cat", "make", "docker", "curl"},
 			},
 			"args": {
 				Type:        "array",
-				Description: "Command arguments as a list of strings. Each argument should be a separate element. Example: for 'git commit -m \"message\"', use ['commit', '-m', 'message'].",
-				Items:       &Items{Type: "string", Description: "A command argument"},
-				Examples:    []any{[]string{"status"}, []string{"install", "--save", "express"}, []string{"-c", "print('hello')"}},
+				Description: "Command arguments as separate list elements. Each argument is a separate string. Examples: For 'git commit -m \"message\"' use ['commit', '-m', 'message']. For 'npm install express' use ['install', 'express']. For 'python script.py --arg value' use ['script.py', '--arg', 'value'].",
+				Items:       &Items{Type: "string", Description: "A single command argument"},
+				Examples:    []any{[]string{"status"}, []string{"install", "--save", "express"}, []string{"-c", "print('hello')"}, []string{"build", "--release"}},
 			},
 			"work_dir": {
 				Type:        "string",
-				Description: "The working directory for command execution. Can be absolute or relative to the sandbox root. Use '.' for current directory.",
+				Description: "The working directory where the command will be executed. Can be absolute or relative to the sandbox root. Use '.' for current directory. The command will run as if you cd'd into this directory first.",
 				MinLength:   intPtr(1),
-				Examples:    []any{".", "src/", "/home/user/project"},
+				Examples:    []any{".", "src/", "/home/user/project", "build/", "scripts/"},
 			},
 			"timeout": {
 				Type:        "integer",
-				Description: "Command timeout in seconds. 0 means no timeout limit. Default is 0. Use reasonable timeouts for long-running commands.",
+				Description: "Maximum time in seconds to wait for command completion. 0 means no timeout (wait indefinitely). Use reasonable timeouts: 30s for quick commands, 300s (5min) for builds, 0 for long-running tasks. Default is 0.",
 				Minimum:     float64Ptr(0),
 				Default:     0,
-				Examples:    []any{30, 60, 300, 0},
+				Examples:    []any{30, 60, 300, 600, 0},
 			},
 		},
 		Required: []string{"command", "work_dir"},
@@ -642,7 +643,7 @@ var ToolSchemas = map[string]JSONSchema{
 
 	"get_system_info": {
 		Type:        "object",
-		Description: "Get comprehensive system information including OS details, CPU, memory, GPU, and network interfaces. Returns detailed hardware and software information about the current system. / 获取全面的系统信息，包括操作系统详情、CPU、内存、显卡和网卡信息。返回当前系统的详细硬件和软件信息。",
+		Description: "GET COMPREHENSIVE SYSTEM INFORMATION about the current machine. Returns detailed hardware and software information including: 1) Operating system (name, version, architecture), 2) CPU details (model, cores, speed), 3) Memory (total, available, used), 4) GPU information (if available), 5) Network interfaces and IP addresses. Use this tool when you need to: 1) Check system specifications, 2) Verify hardware capabilities, 3) Get OS information, 4) Check available resources, 5) Diagnose system configuration. Keywords: system info, hardware, specs, os info, cpu, memory, ram, gpu, network, sysinfo.",
 		Properties:  map[string]Property{},
 		Required:    []string{},
 	},

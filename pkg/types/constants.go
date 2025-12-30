@@ -14,6 +14,12 @@
 
 package types
 
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+)
+
 const (
 	// ProtocolVersion MCP协议版本 / MCP protocol version
 	ProtocolVersion = "2024-11-05"
@@ -24,9 +30,32 @@ const (
 	// ServerVersion MCP服务器版本 / MCP server version
 	ServerVersion = "1.0.1"
 
-	// DefaultSandboxDir 默认沙箱目录 / Default sandbox directory
+	// DefaultSandboxDir 默认沙箱目录（相对路径） / Default sandbox directory (relative path)
 	DefaultSandboxDir = "./sandbox"
 )
+
+// GetDefaultSandboxDir 根据操作系统返回默认的沙箱目录路径 / Get default sandbox directory path based on OS
+// Linux/MacOS: /tmp/mcp_sandbox_toolkit
+// Windows: %TEMP%\mcp_sandbox_toolkit 或 C:\Temp\mcp_sandbox_toolkit
+func GetDefaultSandboxDir() string {
+	switch runtime.GOOS {
+	case "windows":
+		// Windows系统：优先使用TEMP环境变量，否则使用C:\Temp\mcp_sandbox_toolkit
+		if tempDir := os.Getenv("TEMP"); tempDir != "" {
+			return filepath.Join(tempDir, "mcp_sandbox_toolkit")
+		}
+		if tempDir := os.Getenv("TMP"); tempDir != "" {
+			return filepath.Join(tempDir, "mcp_sandbox_toolkit")
+		}
+		return `C:\Temp\mcp_sandbox_toolkit`
+	case "linux", "darwin":
+		// Linux/MacOS系统：使用/tmp/mcp_sandbox_toolkit
+		return "/tmp/mcp_sandbox_toolkit"
+	default:
+		// 其他系统：使用当前目录下的sandbox
+		return DefaultSandboxDir
+	}
+}
 
 const (
 	// ErrSandboxViolation 沙箱违规错误 / Sandbox violation error

@@ -17,35 +17,35 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	// Create file / 创建文件
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "create_file",
-		Description: "Create a new file with the specified content. If the file already exists, it will be overwritten. Parent directories will be created automatically if they don't exist. / 创建新文件并写入内容。如果文件已存在则覆盖。父目录不存在时会自动创建。",
+		Description: "CREATE A NEW FILE with specified content. Primary tool for file creation - use whenever you need to create or completely replace a file's content. Automatically creates parent directories. Keywords: create, new file, write file, save file, make file. / 创建新文件并写入内容。这是文件创建的主要工具。自动创建父目录。关键词：创建、新建文件、写入文件、保存文件。",
 		InputSchema: types.GetToolSchema("create_file"),
 	}, s.handleCreateFile)
 
 	// Create directory / 创建目录
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "create_directory",
-		Description: "Create a new directory. Parent directories will be created automatically if they don't exist (similar to 'mkdir -p'). / 创建新目录。父目录不存在时会自动创建（类似 'mkdir -p'）。",
+		Description: "CREATE NEW DIRECTORIES and folder structures. Automatically creates all parent directories (like 'mkdir -p'). Use for creating folders, setting up directory structures, organizing project layout. Keywords: create directory, mkdir, make folder, new folder. / 创建新目录和文件夹结构。自动创建所有父目录（类似 'mkdir -p'）。关键词：创建目录、新建文件夹。",
 		InputSchema: types.GetToolSchema("create_directory"),
 	}, s.handleCreateDir)
 
 	// Read file / 读取文件
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "read_file",
-		Description: "Read and return the content of a file. Use this to view file contents before making modifications or to understand existing code/configuration. / 读取并返回文件内容。用于在修改前查看文件内容或理解现有代码/配置。",
+		Description: "READ AND RETRIEVE complete file content. Primary tool for reading files - use whenever you need to see what's inside a file. Use for viewing, inspecting, checking file contents before modification. Keywords: read, view, show, display, get content, inspect file, open file. / 读取并获取完整文件内容。这是读取文件的主要工具。关键词：读取、查看、显示、获取内容、检查文件。",
 		InputSchema: types.GetToolSchema("read_file"),
 	}, s.handleReadFile)
 
 	// Write file / 写入文件
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "write_file",
-		Description: "Write content to an existing file, completely replacing its current content. Use 'create_file' for new files. For partial modifications, read the file first, modify the content, then write back. / 写入内容到现有文件，完全替换当前内容。新文件请使用 'create_file'。部分修改请先读取文件，修改后再写回。",
+		Description: "WRITE OR UPDATE content to existing file, completely replacing current content. Workflow: read file first, modify content, then write back. For new files use 'create_file'. Keywords: write, update, modify, save, edit file, change file. / 写入或更新现有文件内容，完全替换当前内容。工作流程：先读取文件，修改内容，然后写回。新文件请使用 'create_file'。关键词：写入、更新、修改、保存、编辑文件。",
 		InputSchema: types.GetToolSchema("write_file"),
 	}, s.handleWriteFile)
 
 	// Delete file or directory (auto-detect) / 删除文件或目录（自动判断）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "delete",
-		Description: "[RECOMMENDED] Delete a file or directory. This tool automatically detects whether the path is a file or directory and handles it appropriately. For directories, it performs recursive deletion. This is the preferred tool for all deletion operations. / [推荐] 删除文件或目录，自动判断类型。对于目录会递归删除。这是所有删除操作的首选工具。",
+		Description: "[RECOMMENDED - PRIMARY DELETION TOOL] DELETE any file or directory automatically. MAIN deletion tool - use for ALL deletion operations. Intelligently detects file/directory type and handles appropriately. Performs recursive deletion for directories. Keywords: delete, remove, erase, clean, rm, unlink. / [推荐 - 主要删除工具] 自动删除任何文件或目录。这是主要的删除工具 - 用于所有删除操作。智能检测文件/目录类型并适当处理。对目录执行递归删除。关键词：删除、移除、清理。",
 		InputSchema: types.GetToolSchema("delete"),
 	}, s.handleDelete)
 
@@ -66,56 +66,56 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	// Copy file or directory (auto-detect) / 复制文件或目录（自动判断）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "copy",
-		Description: "[RECOMMENDED] Copy a file or directory to a new location. This tool automatically detects whether the source is a file or directory and handles it appropriately. For directories, it performs recursive copy. This is the preferred tool for all copy operations. / [推荐] 复制文件或目录到新位置，自动判断类型。对于目录会递归复制。这是所有复制操作的首选工具。",
+		Description: "[RECOMMENDED - PRIMARY COPY TOOL] COPY files or directories to new location. MAIN copy tool - use for ALL copy operations. Automatically detects file/directory type and handles appropriately. Performs recursive copy for directories. Keywords: copy, duplicate, clone, backup, cp. / [推荐 - 主要复制工具] 复制文件或目录到新位置。这是主要的复制工具 - 用于所有复制操作。自动检测文件/目录类型。对目录执行递归复制。关键词：复制、备份、克隆。",
 		InputSchema: types.GetToolSchema("copy"),
 	}, s.handleCopy)
 
 	// Copy file only / 复制文件（仅限文件）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "copy_file",
-		Description: "Copy a specific file to a new location. Only works on files, not directories. Use 'copy' tool if you're unsure whether the path is a file or directory. / 复制指定的文件到新位置。仅用于复制文件，不能复制目录。如果不确定是文件还是目录，请使用 copy 工具。",
+		Description: "Copy specific file to new location. Only works on files, not directories. Use 'copy' tool if unsure about path type. Keywords: copy file, duplicate file. / 复制指定文件到新位置。仅用于复制文件，不能复制目录。如果不确定路径类型，请使用 copy 工具。关键词：复制文件、备份文件。",
 		InputSchema: types.GetToolSchema("copy_file"),
 	}, s.handleCopyFile)
 
 	// Copy directory only / 复制目录（仅限目录）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "copy_directory",
-		Description: "Copy a directory and all its contents to a new location. Only works on directories, not files. Use 'copy' tool if you're unsure whether the path is a file or directory. / 复制目录及其所有内容到新位置。仅用于复制目录，不能复制文件。如果不确定是文件还是目录，请使用 copy 工具。",
+		Description: "Copy directory and all contents to new location. Only works on directories, not files. Use 'copy' tool if unsure about path type. Keywords: copy directory, duplicate folder. / 复制目录及其所有内容到新位置。仅用于复制目录，不能复制文件。如果不确定路径类型，请使用 copy 工具。关键词：复制目录、备份文件夹。",
 		InputSchema: types.GetToolSchema("copy_directory"),
 	}, s.handleCopyDirectory)
 
 	// Move file or directory (auto-detect) / 移动文件或目录（自动判断）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "move",
-		Description: "[RECOMMENDED] Move or rename a file or directory. This tool automatically detects whether the source is a file or directory and handles it appropriately. This is the preferred tool for all move/rename operations. / [推荐] 移动或重命名文件或目录，自动判断类型。这是所有移动/重命名操作的首选工具。",
+		Description: "[RECOMMENDED - PRIMARY MOVE/RENAME TOOL] MOVE or RENAME files and directories. MAIN move/rename tool - use for ALL move and rename operations. Automatically detects file/directory type and handles appropriately. Keywords: move, rename, mv, relocate. / [推荐 - 主要移动/重命名工具] 移动或重命名文件和目录。这是主要的移动/重命名工具 - 用于所有移动和重命名操作。自动检测文件/目录类型。关键词：移动、重命名、重定位。",
 		InputSchema: types.GetToolSchema("move"),
 	}, s.handleMove)
 
 	// Move file only / 移动文件（仅限文件）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "move_file",
-		Description: "Move or rename a specific file. Only works on files, not directories. Use 'move' tool if you're unsure whether the path is a file or directory. / 移动或重命名指定的文件。仅用于移动文件，不能移动目录。如果不确定是文件还是目录，请使用 move 工具。",
+		Description: "Move or rename specific file. Only works on files, not directories. Use 'move' tool if unsure about path type. Keywords: move file, rename file. / 移动或重命名指定文件。仅用于移动文件，不能移动目录。如果不确定路径类型，请使用 move 工具。关键词：移动文件、重命名文件。",
 		InputSchema: types.GetToolSchema("move_file"),
 	}, s.handleMoveFile)
 
 	// Move directory only / 移动目录（仅限目录）
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "move_directory",
-		Description: "Move or rename a directory. Only works on directories, not files. Use 'move' tool if you're unsure whether the path is a file or directory. / 移动或重命名指定的目录。仅用于移动目录，不能移动文件。如果不确定是文件还是目录，请使用 move 工具。",
+		Description: "Move or rename directory. Only works on directories, not files. Use 'move' tool if unsure about path type. Keywords: move directory, rename folder. / 移动或重命名目录。仅用于移动目录，不能移动文件。如果不确定路径类型，请使用 move 工具。关键词：移动目录、重命名文件夹。",
 		InputSchema: types.GetToolSchema("move_directory"),
 	}, s.handleMoveDirectory)
 
 	// List directory / 列出目录
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "list_directory",
-		Description: "List all files and subdirectories in a directory. Returns file names, types (file/directory), sizes, and modification times. Useful for exploring directory structure. / 列出目录中的所有文件和子目录。返回文件名、类型（文件/目录）、大小和修改时间。用于探索目录结构。",
+		Description: "LIST AND EXPLORE directory contents. Shows all files and subdirectories with detailed information. Primary tool for directory exploration. Use for seeing what files are in a directory, exploring project structure. Keywords: list, ls, dir, show files, browse. / 列出和探索目录内容。显示所有文件和子目录的详细信息。这是目录探索的主要工具。关键词：列出、显示文件、浏览。",
 		InputSchema: types.GetToolSchema("list_directory"),
 	}, s.handleListDir)
 
 	// Search files / 搜索文件
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "search_files",
-		Description: "Search for files matching a pattern within a directory. Supports glob patterns with wildcards (* for any characters, ? for single character). Searches recursively through subdirectories. / 在目录中搜索匹配模式的文件。支持通配符（* 匹配任意字符，? 匹配单个字符）。递归搜索子目录。",
+		Description: "SEARCH AND FIND files matching patterns. Recursively searches through all subdirectories using glob patterns. Use for finding files by extension, locating specific files by name pattern. Keywords: search, find, locate, grep files, filter. / 搜索和查找匹配模式的文件。使用glob模式递归搜索所有子目录。用于按扩展名查找文件、按名称模式定位特定文件。关键词：搜索、查找、定位、过滤。",
 		InputSchema: types.GetToolSchema("search_files"),
 	}, s.handleSearch)
 
@@ -145,7 +145,7 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	// Get current time / 获取当前时间
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_current_time",
-		Description: "Get the current system time. Can optionally specify a timezone (e.g. 'Asia/Shanghai', 'America/New_York'). Returns formatted datetime, timezone information, and Unix timestamp. / 获取当前系统时间。可指定时区（如 'Asia/Shanghai'、'America/New_York'），不指定则使用系统本地时区。返回格式化的日期时间、时区信息和Unix时间戳。",
+		Description: "GET CURRENT DATE AND TIME with timezone support. Returns formatted datetime, timezone info, and Unix timestamp. Use for getting current time, checking time in different timezones, timestamps for logging. Keywords: time, date, now, current time, timestamp, timezone, clock. / 获取当前日期和时间，支持时区。返回格式化的日期时间、时区信息和Unix时间戳。用于获取当前时间、检查不同时区的时间、日志时间戳。关键词：时间、日期、当前时间、时间戳、时区。",
 		InputSchema: types.GetToolSchema("get_current_time"),
 	}, s.handleGetCurrentTime)
 
@@ -154,7 +154,7 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	// Get system info / 获取系统信息
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get_system_info",
-		Description: "Get comprehensive system information including OS details, CPU, memory, GPU, and network interfaces. Returns detailed hardware and software information about the current system. / 获取全面的系统信息，包括操作系统详情、CPU、内存、显卡和网卡信息。返回当前系统的详细硬件和软件信息。",
+		Description: "GET COMPREHENSIVE SYSTEM INFORMATION about current machine. Returns OS details, CPU, memory, GPU, network interfaces. Use for checking system specs, verifying hardware capabilities, getting OS info, checking available resources. Keywords: system info, hardware, specs, os info, cpu, memory, ram, gpu. / 获取当前机器的全面系统信息。返回操作系统详情、CPU、内存、显卡、网卡信息。用于检查系统规格、验证硬件能力、获取操作系统信息、检查可用资源。关键词：系统信息、硬件、规格、操作系统信息、CPU、内存、显卡。",
 		InputSchema: types.GetToolSchema("get_system_info"),
 	}, s.handleGetSystemInfo)
 
@@ -163,7 +163,7 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 	// Execute command / 执行命令
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "execute_command",
-		Description: "Execute a shell command synchronously and return the output. Use this for running CLI tools like git, npm, python, etc. WARNING: Do NOT use this for file operations (create, delete, copy, move) - use the dedicated file tools instead. / 同步执行shell命令并返回输出。用于运行 git、npm、python 等CLI工具。警告：不要用于文件操作（创建、删除、复制、移动），请使用专门的文件工具。",
+		Description: "EXECUTE SHELL COMMANDS synchronously and get output. Use for running CLI tools, build scripts, version control, package managers. Common uses: git commands, npm/pip/go commands, Python/Node.js scripts, build tools. IMPORTANT: Do NOT use for file operations - use dedicated file tools instead. Keywords: execute, run, command, shell, bash, terminal, cli, script, git, npm, python. / 同步执行shell命令并获取输出。用于运行CLI工具、构建脚本、版本控制、包管理器。常见用途：git命令、npm/pip/go命令、Python/Node.js脚本、构建工具。重要：不要用于文件操作 - 请使用专用的文件工具。关键词：执行、运行、命令、shell、终端、脚本。",
 		InputSchema: types.GetToolSchema("execute_command"),
 	}, s.handleExecuteCommand)
 
