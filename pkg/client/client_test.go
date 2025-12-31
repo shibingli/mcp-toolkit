@@ -53,7 +53,7 @@ func TestHTTPClient_Initialize(t *testing.T) {
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Result: map[string]interface{}{
-				"protocolVersion": "2024-11-05",
+				"protocolVersion": types.ProtocolVersion,
 				"capabilities": map[string]interface{}{
 					"tools": map[string]interface{}{},
 				},
