@@ -449,6 +449,303 @@ The test script automatically performs the following:
 
 For detailed transport documentation, see: [Transport Documentation](docs/TRANSPORT.md)
 
+## MCP 客户端配置 / MCP Client Configuration
+
+以下是在主流 MCP 客户端（如 Claude Desktop、Cline 等）中配置 MCP Toolkit 的方法。
+
+Here are the methods to configure MCP Toolkit in mainstream MCP clients (such as Claude Desktop, Cline, etc.).
+
+### 配置文件位置 / Configuration File Location
+
+**Claude Desktop:**
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**Cline (VS Code Extension):**
+
+- 在 VS Code 设置中搜索 "MCP Servers" / Search for "MCP Servers" in VS Code settings
+- 或编辑 `settings.json` 文件 / Or edit `settings.json` file
+
+### 1. Stdio 传输配置 / Stdio Transport Configuration
+
+Stdio 是最常用的传输方式，适合本地开发和桌面应用。
+
+Stdio is the most common transport method, suitable for local development and desktop applications.
+
+#### 使用 uvx (推荐) / Using uvx (Recommended)
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit": {
+         "command": "uvx",
+         "args": [
+            "mcp-sandbox-toolkit",
+            "-sandbox",
+            "/path/to/your/sandbox"
+         ],
+         "env": {}
+      }
+   }
+}
+```
+
+#### 使用已安装的二进制文件 / Using Installed Binary
+
+**Linux/macOS:**
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit": {
+         "command": "/usr/local/bin/mcp-toolkit",
+         "args": [
+            "-sandbox",
+            "/path/to/your/sandbox"
+         ],
+         "env": {}
+      }
+   }
+}
+```
+
+**Windows:**
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit": {
+         "command": "C:\\Program Files\\mcp-toolkit\\mcp-toolkit.exe",
+         "args": [
+            "-sandbox",
+            "D:\\developer\\go_code\\mcp_demo"
+         ],
+         "env": {}
+      }
+   }
+}
+```
+
+### 2. HTTP 传输配置 / HTTP Transport Configuration
+
+HTTP 传输适合远程服务器部署和多客户端访问。
+
+HTTP transport is suitable for remote server deployment and multi-client access.
+
+#### 服务器启动 / Server Startup
+
+```bash
+# 启动 HTTP 服务器 / Start HTTP server
+./mcp-toolkit -transport http -http-host 0.0.0.0 -http-port 8080 -sandbox /path/to/sandbox
+```
+
+#### 客户端配置 / Client Configuration
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit-http": {
+         "url": "http://localhost:8080/mcp",
+         "transport": "http",
+         "headers": {
+            "Content-Type": "application/json"
+         }
+      }
+   }
+}
+```
+
+**远程服务器配置 / Remote Server Configuration:**
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit-remote": {
+         "url": "http://your-server.com:8080/mcp",
+         "transport": "http",
+         "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer your-token-here"
+         }
+      }
+   }
+}
+```
+
+### 3. Streamable HTTP 配置 / Streamable HTTP Configuration
+
+Streamable HTTP 支持会话管理和 SSE 流，提供更好的实时性。
+
+Streamable HTTP supports session management and SSE streaming for better real-time performance.
+
+#### 服务器启动 / Server Startup
+
+```bash
+# 启动支持 Streamable HTTP 的服务器 / Start server with Streamable HTTP support
+./mcp-toolkit -transport http \
+  -http-host 0.0.0.0 \
+  -http-port 8080 \
+  -http-enable-session \
+  -http-enable-sse \
+  -http-session-timeout 1800 \
+  -http-sse-heartbeat 30 \
+  -sandbox /path/to/sandbox
+```
+
+#### 客户端配置 / Client Configuration
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit-streamable": {
+         "url": "http://localhost:8080/mcp",
+         "transport": "streamable-http",
+         "headers": {
+            "Content-Type": "application/json",
+            "MCP-Protocol-Version": "2025-12-26"
+         },
+         "sessionManagement": {
+            "enabled": true,
+            "timeout": 1800
+         },
+         "streaming": {
+            "enabled": true,
+            "heartbeat": 30
+         }
+      }
+   }
+}
+```
+
+**启用频率限制 / With Rate Limiting:**
+
+```bash
+./mcp-toolkit -transport http \
+  -http-enable-rate-limit \
+  -http-rate-limit-requests 100 \
+  -http-rate-limit-window 60
+```
+
+### 4. SSE 传输配置 / SSE Transport Configuration
+
+SSE (Server-Sent Events) 传输专门用于服务器推送场景。
+
+SSE (Server-Sent Events) transport is specifically designed for server push scenarios.
+
+#### 服务器启动 / Server Startup
+
+```bash
+# 启动 SSE 服务器 / Start SSE server
+./mcp-toolkit -transport sse \
+  -sse-host 0.0.0.0 \
+  -sse-port 8081 \
+  -sse-max-connections 100 \
+  -sse-heartbeat-interval 30 \
+  -sandbox /path/to/sandbox
+```
+
+**启用频率限制 / With Rate Limiting:**
+
+```bash
+./mcp-toolkit -transport sse \
+  -sse-enable-rate-limit \
+  -sse-rate-limit-requests 100 \
+  -sse-rate-limit-window 60 \
+  -sse-max-connections 100
+```
+
+#### 客户端配置 / Client Configuration
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit-sse": {
+         "url": "http://localhost:8081/sse",
+         "transport": "sse",
+         "headers": {
+            "MCP-Protocol-Version": "2025-12-26"
+         },
+         "connectionManagement": {
+            "maxConnections": 100,
+            "heartbeatInterval": 30
+         }
+      }
+   }
+}
+```
+
+### 配置示例汇总 / Configuration Examples Summary
+
+#### 完整的多服务器配置 / Complete Multi-Server Configuration
+
+```json
+{
+   "mcpServers": {
+      "mcp-toolkit-local": {
+         "command": "uvx",
+         "args": [
+            "mcp-sandbox-toolkit",
+            "-sandbox",
+            "/path/to/local/sandbox"
+         ],
+         "env": {}
+      },
+      "mcp-toolkit-http": {
+         "url": "http://localhost:8080/mcp",
+         "transport": "http",
+         "headers": {
+            "Content-Type": "application/json"
+         }
+      },
+      "mcp-toolkit-streamable": {
+         "url": "http://localhost:8080/mcp",
+         "transport": "streamable-http",
+         "headers": {
+            "Content-Type": "application/json",
+            "MCP-Protocol-Version": "2025-12-26"
+         },
+         "sessionManagement": {
+            "enabled": true,
+            "timeout": 1800
+         }
+      },
+      "mcp-toolkit-sse": {
+         "url": "http://localhost:8081/sse",
+         "transport": "sse",
+         "headers": {
+            "MCP-Protocol-Version": "2025-12-26"
+         }
+      }
+   }
+}
+```
+
+### 配置注意事项 / Configuration Notes
+
+1. **路径格式 / Path Format:**
+   - Windows: 使用双反斜杠 `\\` 或正斜杠 `/`
+   - Linux/macOS: 使用正斜杠 `/`
+
+2. **沙箱目录 / Sandbox Directory:**
+   - 确保目录存在且有读写权限 / Ensure directory exists with read/write permissions
+   - 建议使用绝对路径 / Recommend using absolute paths
+
+3. **端口选择 / Port Selection:**
+   - 确保端口未被占用 / Ensure port is not in use
+   - HTTP 默认: 8080, SSE 默认: 8081
+
+4. **安全性 / Security:**
+   - 生产环境建议启用认证 / Enable authentication in production
+   - 使用 HTTPS/TLS 加密传输 / Use HTTPS/TLS for encrypted transport
+   - 配置防火墙规则 / Configure firewall rules
+
+5. **性能优化 / Performance Optimization:**
+   - 根据需求调整频率限制 / Adjust rate limiting based on needs
+   - 合理设置会话超时时间 / Set appropriate session timeout
+   - 监控连接数和资源使用 / Monitor connections and resource usage
+
 ### JSON 结构体预热 / JSON Structure Preheating
 
 程序启动时会自动预热所有注册的结构体（仅在使用Sonic时有效），以消除首次请求的延迟。
