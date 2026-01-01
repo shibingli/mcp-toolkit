@@ -647,6 +647,60 @@ var ToolSchemas = map[string]JSONSchema{
 		Properties:  map[string]Property{},
 		Required:    []string{},
 	},
+
+	// ==================== Download Tools / 下载工具 ====================
+
+	"download_file": {
+		Type:        "object",
+		Description: "DOWNLOAD FILES from the internet using HTTP/HTTPS protocols. Supports GET, POST, and other HTTP methods with custom headers and request body. Downloaded files are automatically saved to the sandbox directory. Use this tool when you need to: 1) Download files from URLs, 2) Fetch remote resources, 3) Download data files, images, documents, 4) Make HTTP requests with custom parameters, 5) Download API responses. All files are stored securely in the sandbox. Keywords: download, fetch, get file, http download, retrieve file, save from url, download from internet.",
+		Properties: map[string]Property{
+			"url": {
+				Type:        "string",
+				Description: "The URL to download from. Must be a valid HTTP or HTTPS URL. Examples: 'https://example.com/api/report.pdf', 'http://cdn.example.com/data/users.json', 'https://raw.githubusercontent.com/user/repo/main/README.md'.",
+				MinLength:   intPtr(1),
+				Pattern:     "^https?://.*",
+				Examples:    []any{"https://example.com/down", "http://cdn.example.com/data", "https://raw.githubusercontent.com/user/repo/main"},
+			},
+			"path": {
+				Type:        "string",
+				Description: "The file path where the downloaded content will be saved (relative to sandbox directory). Parent directories will be created automatically if they don't exist. The filename can be different from the URL. Examples: 'downloads/my-report.pdf', 'data/user-list.json', 'docs/readme.txt'.",
+				MinLength:   intPtr(1),
+				Examples:    []any{"downloads/my-report.pdf", "data/user-list.json", "docs/readme.txt", "temp/archive.zip"},
+			},
+			"method": {
+				Type:        "string",
+				Description: "HTTP method to use for the request. Common methods: GET (default, for simple downloads), POST (for form submissions or API calls), PUT, DELETE, HEAD. If not specified, defaults to GET.",
+				Enum:        []string{"GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "OPTIONS"},
+				Default:     "GET",
+				Examples:    []any{"GET", "POST", "PUT"},
+			},
+			"headers": {
+				Type:        "object",
+				Description: "Optional HTTP headers to include in the request. Useful for authentication, content type specification, or custom headers. Format: key-value pairs. Examples: {'Authorization': 'Bearer token123', 'Content-Type': 'application/json', 'User-Agent': 'MyApp/1.0'}.",
+				Examples:    []any{map[string]string{"Authorization": "Bearer token123"}, map[string]string{"Content-Type": "application/json", "Accept": "application/json"}},
+			},
+			"body": {
+				Type:        "string",
+				Description: "Optional request body for POST, PUT, or PATCH requests. Can be JSON, form data, or any text content. For JSON data, make sure to set Content-Type header to 'application/json'. Examples: '{\"key\": \"value\"}', 'param1=value1&param2=value2'.",
+				Examples:    []any{"{\"name\": \"test\", \"value\": 123}", "param1=value1&param2=value2", "plain text body"},
+			},
+			"timeout": {
+				Type:        "integer",
+				Description: "Request timeout in seconds. If the download takes longer than this, it will be cancelled. Default is 30 seconds. Increase for large files or slow connections.",
+				Minimum:     float64Ptr(1),
+				Maximum:     float64Ptr(300),
+				Default:     30,
+				Examples:    []any{30, 60, 120},
+			},
+			"skip_tls_verify": {
+				Type:        "boolean",
+				Description: "Skip TLS certificate verification for HTTPS requests. WARNING: This is insecure and should only be used in development environments with self-signed certificates. Never use in production. Default is false (verify certificates).",
+				Default:     false,
+				Examples:    []any{false, true},
+			},
+		},
+		Required: []string{"url", "path"},
+	},
 }
 
 // intPtr 返回 int 指针 / Returns int pointer

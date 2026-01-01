@@ -215,3 +215,49 @@ func validateChangeDirectoryRequest(req *types.ChangeDirectoryRequest) error {
 	}
 	return nil
 }
+
+// validateDownloadFileRequest 验证下载文件请求 / Validate download file request
+func validateDownloadFileRequest(req *types.DownloadFileRequest) error {
+	if req == nil {
+		return errors.New("request cannot be nil")
+	}
+	if req.URL == "" {
+		return errors.New("URL cannot be empty")
+	}
+	if req.Path == "" {
+		return errors.New(types.ErrInvalidPath)
+	}
+	if len(req.Path) > MaxPathLength {
+		return fmt.Errorf("path length exceeds maximum allowed length of %d", MaxPathLength)
+	}
+	// 验证URL格式 / Validate URL format
+	if !isValidURL(req.URL) {
+		return errors.New("invalid URL format, must start with http:// or https://")
+	}
+	// 验证HTTP方法 / Validate HTTP method
+	if req.Method != "" {
+		validMethods := map[string]bool{
+			"GET": true, "POST": true, "PUT": true, "DELETE": true,
+			"HEAD": true, "PATCH": true, "OPTIONS": true,
+		}
+		if !validMethods[req.Method] {
+			return fmt.Errorf("invalid HTTP method: %s", req.Method)
+		}
+	}
+	return nil
+}
+
+// isValidURL 检查URL是否有效 / Check if URL is valid
+func isValidURL(url string) bool {
+	if len(url) == 0 {
+		return false
+	}
+	// 检查是否以http://或https://开头，并且后面有内容
+	if len(url) >= 8 && url[:7] == "http://" && len(url) > 7 {
+		return true
+	}
+	if len(url) >= 9 && url[:8] == "https://" && len(url) > 8 {
+		return true
+	}
+	return false
+}

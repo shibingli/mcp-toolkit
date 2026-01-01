@@ -149,6 +149,15 @@ func (s *Service) RegisterTools(mcpServer *mcp.Server) {
 		InputSchema: types.GetToolSchema("get_current_time"),
 	}, s.handleGetCurrentTime)
 
+	// ==================== Download Tools / 下载工具 ====================
+
+	// Download file / 下载文件
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "download_file",
+		Description: "DOWNLOAD FILES from the internet using HTTP/HTTPS protocols. Supports GET, POST, and other HTTP methods with custom headers and request body. Downloaded files are automatically saved to the sandbox directory. Use this tool when you need to: 1) Download files from URLs, 2) Fetch remote resources, 3) Download data files, images, documents, 4) Make HTTP requests with custom parameters, 5) Download API responses. All files are stored securely in the sandbox. Keywords: download, fetch, get file, http download, retrieve file, save from url, download from internet. / 从互联网下载文件，使用HTTP/HTTPS协议。支持GET、POST等HTTP方法，支持自定义请求头和请求体。下载的文件自动保存到沙箱目录。用于：1) 从URL下载文件，2) 获取远程资源，3) 下载数据文件、图片、文档，4) 使用自定义参数发起HTTP请求，5) 下载API响应。所有文件安全存储在沙箱中。关键词：下载、获取文件、HTTP下载、从URL保存。",
+		InputSchema: types.GetToolSchema("download_file"),
+	}, s.handleDownloadFile)
+
 	// ==================== System Info Tools / 系统信息工具 ====================
 
 	// Get system info / 获取系统信息
@@ -1370,6 +1379,21 @@ func (s *Service) handleSetPermissionLevel(_ context.Context, _ *mcp.CallToolReq
 // handleGetPermissionLevel 处理获取权限级别请求 / Handle get permission level request
 func (s *Service) handleGetPermissionLevel(_ context.Context, _ *mcp.CallToolRequest, args types.GetPermissionLevelRequest) (*mcp.CallToolResult, *types.GetPermissionLevelResponse, error) {
 	resp, err := s.GetPermissionLevel(&args)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resultJSON, _ := json.MarshalToString(resp)
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: resultJSON},
+		},
+	}, resp, nil
+}
+
+// handleDownloadFile 处理下载文件请求 / Handle download file request
+func (s *Service) handleDownloadFile(_ context.Context, _ *mcp.CallToolRequest, args types.DownloadFileRequest) (*mcp.CallToolResult, *types.DownloadFileResponse, error) {
+	resp, err := s.DownloadFile(&args)
 	if err != nil {
 		return nil, nil, err
 	}

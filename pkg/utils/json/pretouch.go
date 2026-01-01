@@ -48,12 +48,14 @@ var pretouchTypes = []any{
 	types.SetPermissionLevelRequest{},
 	types.GetPermissionLevelRequest{},
 	types.GetSystemInfoRequest{},
+	types.DownloadFileRequest{},
 
 	// 响应类型 / Response types
 	types.FileExistsResponse{},
 	types.ReadFileResponse{},
 	types.ListDirResponse{},
 	types.SearchResponse{},
+	types.DownloadFileResponse{},
 	types.OperationResponse{},
 	types.GetTimeResponse{},
 	types.ExecuteCommandResponse{},

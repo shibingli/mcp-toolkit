@@ -58,6 +58,14 @@ MCP ToolKit is a feature-rich and secure MCP tools collection designed to provid
 - ✅ 环境变量配置 / Environment variable configuration
 - ✅ 审计日志 / Audit logging
 
+### 下载工具 / Download Tools
+
+- ✅ HTTP/HTTPS 文件下载 / HTTP/HTTPS file download
+- ✅ 支持 GET、POST 等多种 HTTP 方法 / Support GET, POST and other HTTP methods
+- ✅ 自定义请求头和请求体 / Custom headers and request body
+- ✅ 超时控制 / Timeout control
+- ✅ 自动保存到沙箱 / Automatic save to sandbox
+
 ### 系统工具 / System Tools
 - ✅ 获取当前系统时间 / Get current system time
 - ✅ 获取系统信息 / Get system information (OS, CPU, Memory, GPU, Network)
@@ -840,12 +848,27 @@ Check preheating logs:
 **参数 / Parameters:**
 - `path` (必填 / required): 文件或目录路径(相对于沙箱目录) / File or directory path (relative to sandbox directory)
 
-#### 13. get_current_time
+#### 13. download_file
+
+从互联网下载文件到沙箱目录 / Download file from internet to sandbox directory
+
+**参数 / Parameters:**
+
+- `url` (必填 / required): 下载URL(必须是http://或https://) / Download URL (must be http:// or https://)
+- `path` (必填 / required): 保存路径(相对于沙箱目录) / Save path (relative to sandbox directory)
+- `method` (可选 / optional): HTTP方法(GET/POST/PUT等,默认GET) / HTTP method (GET/POST/PUT etc., default GET)
+- `headers` (可选 / optional): 自定义请求头 / Custom headers
+- `body` (可选 / optional): 请求体(用于POST等方法) / Request body (for POST etc.)
+- `timeout` (可选 / optional): 超时时间(秒,默认30,最大300) / Timeout in seconds (default 30, max 300)
+
+**详细文档 / Detailed Documentation:** [下载工具指南](docs/DOWNLOAD_TOOL.md)
+
+#### 14. get_current_time
 获取当前系统时间 / Get current system time
 
 **参数 / Parameters:** 无 / None
 
-#### 14. execute_command
+#### 15. execute_command
 在沙箱目录内执行命令行命令 / Execute command line command within sandbox directory
 
 **参数 / Parameters:**
@@ -854,30 +877,30 @@ Check preheating logs:
 - `work_dir` (可选 / optional): 工作目录(相对于沙箱根目录) / Working directory (relative to sandbox root)
 - `timeout` (可选 / optional): 超时时间(秒),0表示使用默认值 / Timeout in seconds, 0 for default
 
-#### 15. get_command_blacklist
+#### 16. get_command_blacklist
 获取命令和目录黑名单配置 / Get command and directory blacklist configuration
 
 **参数 / Parameters:** 无 / None
 
-#### 16. update_command_blacklist
+#### 17. update_command_blacklist
 更新命令和目录黑名单 / Update command and directory blacklist
 
 **参数 / Parameters:**
 - `commands` (可选 / optional): 要添加的黑名单命令列表 / Commands to add to blacklist
 - `directories` (可选 / optional): 要添加的黑名单目录列表 / Directories to add to blacklist
 
-#### 17. get_working_directory
+#### 18. get_working_directory
 获取当前工作目录 / Get current working directory
 
 **参数 / Parameters:** 无 / None
 
-#### 18. change_directory
+#### 19. change_directory
 切换当前工作目录 / Change current working directory
 
 **参数 / Parameters:**
 - `path` (必填 / required): 目标目录路径(相对于沙箱根目录) / Target directory path (relative to sandbox root)
 
-#### 19. execute_command_async
+#### 20. execute_command_async
 异步执行命令,返回任务ID / Execute command asynchronously, returns task ID
 
 **参数 / Parameters:**
@@ -889,7 +912,7 @@ Check preheating logs:
 - `permission_level` (可选 / optional): 权限级别 / Permission level
 - `user` (可选 / optional): 执行用户 / Executing user
 
-#### 20. get_command_task
+#### 21. get_command_task
 获取异步命令任务状态 / Get async command task status
 
 **参数 / Parameters:**

@@ -176,3 +176,24 @@ type ListDirResponse struct {
 type SearchResponse struct {
 	Files []FileInfo `json:"files"` // 匹配的文件列表 / Matched file list
 }
+
+// DownloadFileRequest 下载文件请求 / Download file request
+type DownloadFileRequest struct {
+	URL           string            `json:"url"`                       // 下载URL / Download URL
+	Path          string            `json:"path"`                      // 保存路径（相对于沙箱目录）/ Save path (relative to sandbox directory)
+	Method        string            `json:"method,omitempty"`          // HTTP方法（GET/POST等，默认GET）/ HTTP method (GET/POST etc., default GET)
+	Headers       map[string]string `json:"headers,omitempty"`         // HTTP请求头 / HTTP headers
+	Body          string            `json:"body,omitempty"`            // 请求体（用于POST等方法）/ Request body (for POST etc.)
+	Timeout       int               `json:"timeout,omitempty"`         // 超时时间（秒，默认30秒）/ Timeout in seconds (default 30)
+	SkipTLSVerify bool              `json:"skip_tls_verify,omitempty"` // 跳过TLS证书验证（仅用于开发环境，生产环境不建议使用）/ Skip TLS certificate verification (for development only, not recommended for production)
+}
+
+// DownloadFileResponse 下载文件响应 / Download file response
+type DownloadFileResponse struct {
+	Success      bool   `json:"success"`       // 是否成功 / Whether successful
+	Message      string `json:"message"`       // 响应消息 / Response message
+	SandboxPath  string `json:"sandbox_path"`  // 沙箱内的相对路径 / Relative path in sandbox
+	AbsolutePath string `json:"absolute_path"` // 绝对路径 / Absolute path
+	Size         int64  `json:"size"`          // 文件大小（字节）/ File size in bytes
+	ContentType  string `json:"content_type"`  // 内容类型 / Content type
+}
