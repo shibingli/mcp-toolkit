@@ -1,17 +1,17 @@
 # Makefile for MCP Toolkit
 # 用于简化构建、测试和发布流程
 
-.PHONY: help build build-all test clean install uninstall release dev
+.PHONY: help build build-all test clean install uninstall release dev version
 
 # 项目信息 / Project information
 PROJECT_NAME := mcp-toolkit
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S_UTC')
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # 构建标签 / Build tags
 BUILD_TAGS := sonic
-LDFLAGS := -s -w -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT)
+LDFLAGS := -s -w -X 'main.version=$(VERSION)' -X 'main.gitCommit=$(GIT_COMMIT)' -X 'main.buildTime=$(BUILD_TIME)'
 
 # 目录 / Directories
 OUTPUT_DIR := dist
@@ -31,6 +31,7 @@ help:
 	@echo "  make uninstall    - Uninstall from local system"
 	@echo "  make release      - Create a new release (tag and build)"
 	@echo "  make dev          - Run in development mode"
+	@echo "  make version      - Show version information"
 	@echo "  make fmt          - Format code"
 	@echo "  make lint         - Run linters"
 	@echo ""
@@ -121,6 +122,17 @@ dev:
 	@echo "Running in development mode..."
 	@mkdir -p $(SANDBOX_DIR)
 	go run -tags="$(BUILD_TAGS)" . -sandbox $(SANDBOX_DIR) -transport stdio
+
+# 显示版本信息 / Show version information
+version:
+	@echo "========================================"
+	@echo "MCP Toolkit 版本信息"
+	@echo "========================================"
+	@echo "版本号:       $(VERSION)"
+	@echo "Git提交:      $(GIT_COMMIT)"
+	@echo "构建时间:     $(BUILD_TIME)"
+	@echo "Go版本:       $(shell go version | awk '{print $$3}')"
+	@echo "========================================"
 
 # 格式化代码 / Format code
 fmt:

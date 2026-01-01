@@ -12,7 +12,8 @@ if "%VERSION%"=="" (
     if "!VERSION!"=="" set VERSION=dev
 )
 
-for /f "tokens=*" %%i in ('powershell -Command "Get-Date -Format 'yyyy-MM-dd_HH:mm:ss' -AsUTC"') do set BUILD_TIME=%%i
+for /f "tokens=*" %%i in ('powershell -Command "[DateTime]::UtcNow.ToString('yyyy-MM-dd_HH:mm:ss')"') do set BUILD_TIME=%%i
+if "%BUILD_TIME%"=="" set BUILD_TIME=unknown
 for /f "tokens=*" %%i in ('git rev-parse --short HEAD 2^>nul') do set GIT_COMMIT=%%i
 if "%GIT_COMMIT%"=="" set GIT_COMMIT=unknown
 
@@ -25,7 +26,8 @@ if exist %OUTPUT_DIR% rmdir /s /q %OUTPUT_DIR%
 mkdir %OUTPUT_DIR%
 
 REM Build information
-set LDFLAGS=-s -w -X main.Version=%VERSION% -X main.BuildTime=%BUILD_TIME% -X main.GitCommit=%GIT_COMMIT%
+REM Note: Variable names must match exactly with main.go definitions (lowercase)
+set LDFLAGS=-s -w -X "main.version=%VERSION%" -X "main.buildTime=%BUILD_TIME%" -X "main.gitCommit=%GIT_COMMIT%"
 
 echo =========================================
 echo Building %PROJECT_NAME% v%VERSION%

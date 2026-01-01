@@ -18,20 +18,47 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"syscall"
-
 	"mcp-toolkit/internal/services/sandbox"
 	"mcp-toolkit/pkg/transport"
 	"mcp-toolkit/pkg/types"
 	"mcp-toolkit/pkg/utils/json"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"syscall"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+var (
+	// 版本信息变量，通过 ldflags 在编译时注入 / Version information variables, injected at build time via ldflags
+	version   = "dev"             // 版本号 / Version number
+	gitCommit = "unknown"         // Git提交哈希 / Git commit hash
+	buildTime = "unknown"         // 构建时间 / Build time
+	goVersion = runtime.Version() // Go版本 / Go version
+	buildOS   = runtime.GOOS      // 构建操作系统 / Build OS
+	buildArch = runtime.GOARCH    // 构建架构 / Build architecture
+)
+
+// printVersion 打印版本信息 / Print version information
+func printVersion() {
+	fmt.Printf("%s version %s\n", types.ServerName, version)
+	fmt.Printf("Git Commit:   %s\n", gitCommit)
+	fmt.Printf("Build Time:   %s\n", buildTime)
+	fmt.Printf("Go Version:   %s\n", goVersion)
+	fmt.Printf("OS/Arch:      %s/%s\n", buildOS, buildArch)
+}
+
+// getVersion 获取版本号 / Get version number
+func getVersion() string {
+	if version == "dev" {
+		return types.ServerVersion
+	}
+	return version
+}
 
 // initLogger 初始化日志记录器 / Initialize logger
 func initLogger() (*zap.Logger, error) {
@@ -50,6 +77,7 @@ func initLogger() (*zap.Logger, error) {
 
 func main() {
 	// 解析命令行参数 / Parse command line arguments
+	showVersion := flag.Bool("version", false, "显示版本信息 / Show version information")
 	sandboxDir := flag.String("sandbox", types.GetDefaultSandboxDir(), "沙箱目录路径 / Sandbox directory path")
 	transportType := flag.String("transport", "stdio", "传输类型: stdio, http, sse / Transport type: stdio, http, sse")
 
@@ -71,6 +99,12 @@ func main() {
 
 	flag.Parse()
 
+	// 如果指定了 -version 参数，打印版本信息后退出 / If -version flag is specified, print version and exit
+	if *showVersion {
+		printVersion()
+		os.Exit(0)
+	}
+
 	// 初始化日志记录器 / Initialize logger
 	logger, err := initLogger()
 	if err != nil {
@@ -81,7 +115,11 @@ func main() {
 
 	logger.Info("starting MCP server",
 		zap.String("name", types.ServerName),
-		zap.String("version", types.ServerVersion),
+		zap.String("version", getVersion()),
+		zap.String("git_commit", gitCommit),
+		zap.String("build_time", buildTime),
+		zap.String("go_version", goVersion),
+		zap.String("os_arch", fmt.Sprintf("%s/%s", buildOS, buildArch)),
 		zap.String("sandbox_dir", *sandboxDir),
 		zap.String("transport", *transportType))
 
@@ -115,7 +153,7 @@ func main() {
 	mcpServer := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    types.ServerName,
-			Version: types.ServerVersion,
+			Version: getVersion(),
 		},
 		&mcp.ServerOptions{
 			Capabilities: &mcp.ServerCapabilities{

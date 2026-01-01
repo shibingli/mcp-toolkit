@@ -19,7 +19,8 @@ rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
 
 # 构建信息 / Build information
-LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+# 注意：变量名必须与 main.go 中定义的变量名完全匹配（小写）
+LDFLAGS="-s -w -X 'main.version=${VERSION}' -X 'main.buildTime=${BUILD_TIME}' -X 'main.gitCommit=${GIT_COMMIT}'"
 
 echo "========================================="
 echo "Building ${PROJECT_NAME} ${VERSION}"
