@@ -772,6 +772,15 @@ func (s *Service) RegisterToolsToRegistry(registry *transport.ToolRegistry) {
 		InputSchema: types.GetToolSchema("get_current_time"),
 	}, s.wrapGetCurrentTime)
 
+	// ==================== Download Tools / 下载工具 ====================
+
+	// Download file / 下载文件
+	registry.RegisterTool(&mcp.Tool{
+		Name:        "download_file",
+		Description: "Download files from the internet using HTTP/HTTPS protocols. Supports GET, POST, and other HTTP methods with custom headers and request body. Downloaded files are automatically saved to the sandbox directory. Use this tool when you need to: 1) Download files from URLs, 2) Fetch remote resources, 3) Download data files, images, documents, 4) Make HTTP requests with custom parameters, 5) Download API responses. All files are stored securely in the sandbox. / 从互联网下载文件，使用HTTP/HTTPS协议。支持GET、POST等HTTP方法，支持自定义请求头和请求体。下载的文件自动保存到沙箱目录。用于：1) 从URL下载文件，2) 获取远程资源，3) 下载数据文件、图片、文档，4) 使用自定义参数发起HTTP请求，5) 下载API响应。所有文件安全存储在沙箱中。",
+		InputSchema: types.GetToolSchema("download_file"),
+	}, s.wrapDownloadFile)
+
 	// ==================== System Info Tools / 系统信息工具 ====================
 
 	// Get system info / 获取系统信息
@@ -1114,6 +1123,19 @@ func (s *Service) wrapGetCurrentTime(ctx context.Context, arguments interface{})
 		return nil, err
 	}
 	result, _, err := s.handleGetCurrentTime(ctx, nil, args)
+	return result, err
+}
+
+func (s *Service) wrapDownloadFile(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		return nil, err
+	}
+	var args types.DownloadFileRequest
+	if err = json.Unmarshal(argsJSON, &args); err != nil {
+		return nil, err
+	}
+	result, _, err := s.handleDownloadFile(ctx, nil, args)
 	return result, err
 }
 
