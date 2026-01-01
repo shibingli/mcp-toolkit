@@ -37,6 +37,10 @@ mcp-toolkit-client.exe
 /sandbox/
 *.log
 
+# Python wrapper binary directory (binaries are added during wheel build)
+python/mcp_toolkit_wrapper/bin/mcp-toolkit
+python/mcp_toolkit_wrapper/bin/mcp-toolkit.exe
+
 # Build artifacts / 构建产物
 dist/
 *.tar.gz

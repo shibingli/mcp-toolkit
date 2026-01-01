@@ -1,11 +1,17 @@
 """
 MCP Toolkit Python Wrapper
 
-这是一个 Python 包装器，用于通过 uv/pipx 安装和管理 MCP Toolkit。
-实际的二进制文件会在安装时自动下载。
+这是一个 Python 包装器，用于通过 pip/pipx/uv 安装和管理 MCP Toolkit。
 
-This is a Python wrapper for installing and managing MCP Toolkit via uv/pipx.
-The actual binary will be automatically downloaded during installation.
+支持两种模式：
+1. 嵌入式模式：二进制文件打包在 wheel 中（通过 PyPI 安装时）
+2. 下载模式：运行时从 GitHub 下载二进制文件（开发/源码安装时）
+
+This is a Python wrapper for installing and managing MCP Toolkit via pip/pipx/uv.
+
+Supports two modes:
+1. Embedded mode: Binary bundled in wheel (when installed via PyPI)
+2. Download mode: Download binary from GitHub at runtime (for dev/source install)
 """
 
 import importlib.metadata
@@ -20,7 +26,22 @@ except importlib.metadata.PackageNotFoundError:
 __author__ = "MCP Toolkit Authors"
 __license__ = "Apache-2.0"
 
-from .installer import install_binary, uninstall_binary, get_binary_path, main, uninstall_main
+from .installer import (
+    install_binary,
+    uninstall_binary,
+    get_binary_path,
+    get_embedded_binary_path,
+    main,
+    uninstall_main,
+)
 
-__all__ = ["install_binary", "uninstall_binary", "get_binary_path", "main", "uninstall_main", "__version__"]
+__all__ = [
+    "install_binary",
+    "uninstall_binary",
+    "get_binary_path",
+    "get_embedded_binary_path",
+    "main",
+    "uninstall_main",
+    "__version__",
+]
 

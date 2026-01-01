@@ -1,6 +1,12 @@
 """
-MCP Toolkit 二进制安装器
-Binary installer for MCP Toolkit
+MCP Toolkit Python 包装器
+Python wrapper for MCP Toolkit
+
+支持两种模式 / Supports two modes:
+1. 嵌入式模式：二进制文件打包在 wheel 中（推荐，通过 PyPI 安装）
+   Embedded mode: Binary bundled in wheel (recommended, install via PyPI)
+2. 下载模式：运行时从 GitHub 下载二进制文件（开发/源码安装时使用）
+   Download mode: Download binary from GitHub at runtime (for dev/source install)
 """
 
 import os
@@ -19,10 +25,11 @@ from typing import Optional, List
 
 # 配置 / Configuration
 REPO = "shibingli/mcp-toolkit"
+PACKAGE_NAME = "mcp-sandbox-toolkit"
 
 # 动态获取版本号 / Get version dynamically
 try:
-    VERSION = importlib.metadata.version("mcp-sandbox-toolkit")
+    VERSION = importlib.metadata.version(PACKAGE_NAME)
 except importlib.metadata.PackageNotFoundError:
     VERSION = "0.0.0-dev"
 
@@ -47,6 +54,71 @@ def is_dev_version(version: str) -> bool:
     )
 
 
+def get_package_bin_dir() -> Path:
+    """
+    获取包内的 bin 目录路径
+    Get the bin directory path within the package
+
+    Returns:
+        Path: 包内 bin 目录的路径
+    """
+    return Path(__file__).parent / "bin"
+
+
+def get_embedded_binary_path() -> Optional[Path]:
+    """
+    获取嵌入式二进制文件路径（打包在 wheel 中的二进制文件）
+    Get embedded binary path (binary bundled in wheel)
+
+    Returns:
+        Optional[Path]: 嵌入式二进制文件路径，如果不存在则返回 None
+    """
+    bin_dir = get_package_bin_dir()
+    binary_name = "mcp-toolkit.exe" if sys.platform == "win32" else "mcp-toolkit"
+    binary_path = bin_dir / binary_name
+
+    if binary_path.exists():
+        return binary_path
+    return None
+
+
+def get_platform_info() -> tuple[str, str]:
+    """
+    获取平台信息 / Get platform information
+
+    Returns:
+        tuple: (os_name, architecture)
+    """
+    os_name = platform.system().lower()
+    machine = platform.machine().lower()
+
+    # 标准化操作系统名称 / Normalize OS name
+    if os_name == "windows":
+        os_name = "windows"
+    elif os_name == "darwin":
+        os_name = "darwin"
+    elif os_name == "linux":
+        os_name = "linux"
+    else:
+        raise RuntimeError(f"Unsupported operating system: {os_name}")
+
+    # 标准化架构名称 / Normalize architecture
+    if machine in ("x86_64", "amd64"):
+        arch = "amd64"
+    elif machine in ("aarch64", "arm64"):
+        arch = "arm64"
+    else:
+        raise RuntimeError(f"Unsupported architecture: {machine}")
+
+    return os_name, arch
+
+
+def get_binary_name() -> str:
+    """获取二进制文件名 / Get binary name"""
+    os_name, _ = get_platform_info()
+    return "mcp-toolkit.exe" if os_name == "windows" else "mcp-toolkit"
+
+
 def get_scripts_dir() -> Optional[Path]:
     """
     获取当前 Python 环境的 scripts 目录
@@ -56,14 +128,11 @@ def get_scripts_dir() -> Optional[Path]:
         Optional[Path]: scripts 目录路径，如果无法获取则返回 None
     """
     try:
-        # 优先使用 sysconfig 获取 scripts 目录
         scripts_path = sysconfig.get_path('scripts')
         if scripts_path:
             scripts_dir = Path(scripts_path)
-            # 检查是否可写
             if scripts_dir.exists() and os.access(scripts_dir, os.W_OK):
                 return scripts_dir
-            # 尝试创建目录
             try:
                 scripts_dir.mkdir(parents=True, exist_ok=True)
                 return scripts_dir
@@ -71,7 +140,6 @@ def get_scripts_dir() -> Optional[Path]:
                 pass
     except Exception:
         pass
-
     return None
 
 
@@ -88,46 +156,19 @@ def get_user_install_dir() -> Path:
         install_dir = base_dir / "Programs" / "mcp-toolkit"
     else:
         install_dir = Path.home() / ".local" / "bin"
-
     install_dir.mkdir(parents=True, exist_ok=True)
     return install_dir
 
 
-def get_platform_info() -> tuple[str, str]:
+def get_cache_dir() -> Path:
     """
-    获取平台信息 / Get platform information
-    
+    获取缓存目录
+    Get cache directory
+
     Returns:
-        tuple: (os_name, architecture)
+        Path: 缓存目录路径
     """
-    os_name = platform.system().lower()
-    machine = platform.machine().lower()
-    
-    # 标准化操作系统名称 / Normalize OS name
-    if os_name == "windows":
-        os_name = "windows"
-    elif os_name == "darwin":
-        os_name = "darwin"
-    elif os_name == "linux":
-        os_name = "linux"
-    else:
-        raise RuntimeError(f"Unsupported operating system: {os_name}")
-    
-    # 标准化架构名称 / Normalize architecture
-    if machine in ("x86_64", "amd64"):
-        arch = "amd64"
-    elif machine in ("aarch64", "arm64"):
-        arch = "arm64"
-    else:
-        raise RuntimeError(f"Unsupported architecture: {machine}")
-    
-    return os_name, arch
-
-
-def get_binary_name() -> str:
-    """获取二进制文件名 / Get binary name"""
-    os_name, _ = get_platform_info()
-    return "mcp-toolkit.exe" if os_name == "windows" else "mcp-toolkit"
+    return Path.home() / ".cache" / "mcp-toolkit"
 
 
 def get_install_dir() -> Path:
@@ -160,6 +201,11 @@ def get_all_possible_binary_paths() -> List[Path]:
     binary_name = get_binary_name()
     paths = []
 
+    # 嵌入式二进制文件（包内）
+    embedded = get_embedded_binary_path()
+    if embedded:
+        paths.append(embedded)
+
     # Python 环境的 scripts 目录
     scripts_dir = get_scripts_dir()
     if scripts_dir:
@@ -176,20 +222,35 @@ def get_binary_path() -> Path:
     """
     获取二进制文件路径 / Get binary path
 
-    首先检查是否已存在于任何可能的位置，如果存在则返回该路径
-    否则返回默认安装目录的路径
+    优先级：
+    1. 嵌入式二进制文件（打包在 wheel 中）
+    2. Python scripts 目录中的二进制文件
+    3. 用户级目录中的二进制文件
+    4. 默认安装目录
 
     Returns:
         Path: 二进制文件路径
     """
+    # 优先使用嵌入式二进制文件
+    embedded = get_embedded_binary_path()
+    if embedded:
+        return embedded
+
     binary_name = get_binary_name()
 
-    # 检查所有可能的位置
-    for path in get_all_possible_binary_paths():
-        if path.exists():
-            return path
+    # 检查其他可能的位置
+    scripts_dir = get_scripts_dir()
+    if scripts_dir:
+        scripts_binary = scripts_dir / binary_name
+        if scripts_binary.exists():
+            return scripts_binary
 
-    # 返回默认安装目录
+    user_dir = get_user_install_dir()
+    user_binary = user_dir / binary_name
+    if user_binary.exists():
+        return user_binary
+
+    # 返回默认安装目录（用于下载模式）
     return get_install_dir() / binary_name
 
 
@@ -481,15 +542,17 @@ def print_version_info():
 
 def print_help():
     """打印帮助信息 / Print help information"""
-    print("""MCP Toolkit - Python Wrapper
+    embedded = get_embedded_binary_path()
+    mode = "embedded (PyPI)" if embedded else "download (source)"
+
+    print(f"""MCP Toolkit - Python Wrapper
+
+Mode: {mode}
 
 Usage:
   mcp-sandbox-toolkit [options] [binary-args...]
 
 Wrapper Options:
-  --install-binary     Force install/reinstall the binary
-  --uninstall-binary   Remove the binary and cache files
-  --upgrade-binary     Upgrade binary to match Python package version
   --binary-version     Show version information
   --binary-path        Show binary installation path
   --wrapper-help       Show this help message
@@ -497,25 +560,18 @@ Wrapper Options:
 All other arguments are passed directly to the mcp-toolkit binary.
 
 Examples:
-  mcp-sandbox-toolkit --install-binary    # Install the binary
-  mcp-sandbox-toolkit --uninstall-binary  # Remove the binary
-  mcp-sandbox-toolkit -version            # Show binary version (passed to binary)
-  mcp-sandbox-toolkit --help              # Show binary help (passed to binary)
+  mcp-sandbox-toolkit -version            # Show binary version
+  mcp-sandbox-toolkit --help              # Show binary help
+  mcp-sandbox-toolkit -stdio              # Run in stdio mode
 
-Uninstall (for all package managers):
-  Step 1: Clean up binary files first
-    mcp-toolkit-uninstall
-    # or: mcp-sandbox-toolkit --uninstall-binary
+Uninstall:
+  pip:   pip uninstall mcp-sandbox-toolkit
+  pipx:  pipx uninstall mcp-sandbox-toolkit
+  uv:    uv pip uninstall mcp-sandbox-toolkit
+  uvx:   (no uninstall needed, runs in temporary environment)
 
-  Step 2: Uninstall Python package
-    pip:   pip uninstall mcp-sandbox-toolkit
-    pipx:  pipx uninstall mcp-sandbox-toolkit
-    uv:    uv pip uninstall mcp-sandbox-toolkit
-           # or: uv remove mcp-sandbox-toolkit
-
-Note: The binary is installed in Python's scripts directory, so it will be
-automatically removed when you uninstall the package. However, running
-mcp-toolkit-uninstall first ensures complete cleanup of cache files.
+Note: When installed via PyPI (pip/pipx/uv), the binary is bundled in the
+package and will be automatically removed when you uninstall the package.
 """)
 
 
@@ -561,23 +617,36 @@ def main():
             print_help()
             sys.exit(0)
 
-    # 确定目标版本 / Determine target version
-    # 如果是开发版本，使用 GitHub 最新版本 / If dev version, use GitHub latest
-    if is_dev_version(VERSION):
-        target_version = None  # 将使用 get_latest_version()
+    # 优先检查嵌入式二进制文件 / Check embedded binary first
+    embedded_binary = get_embedded_binary_path()
+    if embedded_binary:
+        # 使用嵌入式二进制文件（PyPI wheel 安装模式）
+        # Use embedded binary (PyPI wheel installation mode)
+        binary_path = embedded_binary
+        # 确保有执行权限 / Ensure execute permission
+        if sys.platform != "win32":
+            try:
+                os.chmod(binary_path, 0o755)
+            except Exception:
+                pass
     else:
-        target_version = f"v{VERSION}" if not VERSION.startswith("v") else VERSION
+        # 下载模式（开发/源码安装）/ Download mode (dev/source install)
+        # 确定目标版本 / Determine target version
+        if is_dev_version(VERSION):
+            target_version = None  # 将使用 get_latest_version()
+        else:
+            target_version = f"v{VERSION}" if not VERSION.startswith("v") else VERSION
 
-    # 安装或更新二进制文件 / Install or update binary
-    try:
-        binary_path = install_binary(version=target_version)
-    except Exception as e:
-        print(f"Error installing MCP Toolkit: {e}", file=sys.stderr)
-        # 如果安装失败但二进制文件存在，尝试使用现有的 / If install fails but binary exists, try using existing
-        binary_path = get_binary_path()
-        if not binary_path.exists():
-            sys.exit(1)
-        print(f"Using existing binary: {binary_path}", file=sys.stderr)
+        # 安装或更新二进制文件 / Install or update binary
+        try:
+            binary_path = install_binary(version=target_version)
+        except Exception as e:
+            print(f"Error installing MCP Toolkit: {e}", file=sys.stderr)
+            # 如果安装失败但二进制文件存在，尝试使用现有的
+            binary_path = get_binary_path()
+            if not binary_path.exists():
+                sys.exit(1)
+            print(f"Using existing binary: {binary_path}", file=sys.stderr)
 
     # 执行二进制文件 / Execute binary
     try:
@@ -592,22 +661,43 @@ def main():
 
 def uninstall_main():
     """
-    卸载入口函数，用于 pip uninstall 前清理二进制文件
-    Uninstall entry point for cleaning up binary before pip uninstall
+    卸载入口函数，清理缓存文件（如果有）
+    Uninstall entry point for cleaning up cache files (if any)
     """
     print("MCP Toolkit Uninstaller")
     print("=" * 40)
-    success = uninstall_binary()
 
-    if success:
-        print("\nTo complete uninstallation, run one of the following:")
+    embedded = get_embedded_binary_path()
+    if embedded:
+        print("\nThis package was installed via PyPI with embedded binary.")
+        print("The binary will be automatically removed when you uninstall the package.")
+        print()
+
+        # 只清理缓存目录 / Only clean cache directory
+        cache_dir = get_cache_dir()
+        if cache_dir.exists():
+            try:
+                shutil.rmtree(cache_dir)
+                print(f"✓ Removed cache directory: {cache_dir}")
+            except Exception as e:
+                print(f"✗ Failed to remove cache: {e}", file=sys.stderr)
+
+        print("\nTo uninstall the package, run one of the following:")
         print()
         print("  pip:   pip uninstall mcp-sandbox-toolkit")
         print("  pipx:  pipx uninstall mcp-sandbox-toolkit")
         print("  uv:    uv pip uninstall mcp-sandbox-toolkit")
-        print("         # or: uv remove mcp-sandbox-toolkit")
-
-    sys.exit(0 if success else 1)
+        sys.exit(0)
+    else:
+        # 下载模式，清理所有文件 / Download mode, clean all files
+        success = uninstall_binary()
+        if success:
+            print("\nTo complete uninstallation, run one of the following:")
+            print()
+            print("  pip:   pip uninstall mcp-sandbox-toolkit")
+            print("  pipx:  pipx uninstall mcp-sandbox-toolkit")
+            print("  uv:    uv pip uninstall mcp-sandbox-toolkit")
+        sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

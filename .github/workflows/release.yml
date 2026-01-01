@@ -133,9 +133,180 @@ jobs:
             dist/checksums.txt
           retention-days: 90
 
+  # 构建平台特定的 Python wheel 包
+  # Build platform-specific Python wheels
+  build-python-wheels:
+    name: Build Python wheel (${{ matrix.os }}-${{ matrix.arch }})
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            archive_ext: tar.gz
+            wheel_tag: manylinux2014_x86_64
+          - os: linux
+            arch: arm64
+            archive_ext: tar.gz
+            wheel_tag: manylinux2014_aarch64
+          - os: darwin
+            arch: amd64
+            archive_ext: tar.gz
+            wheel_tag: macosx_10_9_x86_64
+          - os: darwin
+            arch: arm64
+            archive_ext: tar.gz
+            wheel_tag: macosx_11_0_arm64
+          - os: windows
+            arch: amd64
+            archive_ext: zip
+            wheel_tag: win_amd64
+          - os: windows
+            arch: arm64
+            archive_ext: zip
+            wheel_tag: win_arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build hatchling wheel
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION_TAG="${{ github.event.inputs.version }}"
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION_TAG=${GITHUB_REF#refs/tags/}
+          else
+            VERSION_TAG=$(git describe --tags --abbrev=0)
+          fi
+          VERSION=${VERSION_TAG#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_TAG=$VERSION_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-toolkit-${{ steps.get_version.outputs.VERSION_TAG }}
+          path: ./downloads
+
+      - name: Extract binary
+        run: |
+          mkdir -p python/mcp_toolkit_wrapper/bin
+          cd downloads
+
+          ARCHIVE_NAME="mcp-toolkit-${{ steps.get_version.outputs.VERSION_TAG }}-${{ matrix.os }}-${{ matrix.arch }}.${{ matrix.archive_ext }}"
+
+          if [[ "${{ matrix.archive_ext }}" == "zip" ]]; then
+            unzip -o "$ARCHIVE_NAME"
+          else
+            tar -xzf "$ARCHIVE_NAME"
+          fi
+
+          # 找到二进制文件并复制 / Find and copy binary
+          BINARY_NAME="mcp-toolkit"
+          if [[ "${{ matrix.os }}" == "windows" ]]; then
+            BINARY_NAME="mcp-toolkit.exe"
+          fi
+
+          EXTRACTED_DIR="mcp-toolkit-${{ matrix.os }}-${{ matrix.arch }}"
+          cp "${EXTRACTED_DIR}/${BINARY_NAME}" ../python/mcp_toolkit_wrapper/bin/
+
+          echo "Binary copied:"
+          ls -la ../python/mcp_toolkit_wrapper/bin/
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Rename wheel with platform tag
+        run: |
+          cd dist
+          for f in *.whl; do
+            BASENAME=$(echo "$f" | sed 's/-py3-none-any\.whl$//')
+            NEW_NAME="${BASENAME}-py3-none-${{ matrix.wheel_tag }}.whl"
+            mv "$f" "$NEW_NAME"
+            echo "Renamed: $f -> $NEW_NAME"
+          done
+          ls -la
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheel-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*.whl
+          retention-days: 90
+
+  # 构建源码分发包 / Build source distribution
+  build-python-sdist:
+    name: Build Python sdist
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build hatchling
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            VERSION=${VERSION#v}
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(git describe --tags --always --dirty | sed 's/^v//')
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+
+      - name: Build sdist
+        run: python -m build --sdist
+
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-sdist
+          path: dist/*.tar.gz
+          retention-days: 90
+
+  # 发布到 PyPI / Publish to PyPI
   publish-pypi:
     name: Publish to PyPI
-    needs: build
+    needs: [ build, build-python-wheels, build-python-sdist ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
     environment:
@@ -143,55 +314,34 @@ jobs:
       url: https://pypi.org/project/mcp-sandbox-toolkit/
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
         with:
-          fetch-depth: 0
+          pattern: python-wheel-*
+          path: dist
+          merge-multiple: true
+
+      - name: Download sdist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-sdist
+          path: dist
+
+      - name: List distributions
+        run: |
+          echo "Distributions to publish:"
+          ls -la dist/
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine hatchling
+      - name: Install twine
+        run: pip install twine
 
-      - name: Get version from tag
-        id: get_version
-        run: |
-          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-            VERSION=${VERSION#v}  # Remove 'v' prefix if present
-          elif [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          else
-            VERSION=$(git describe --tags --always --dirty | sed 's/^v//')
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "### Publishing Version: \`$VERSION\` to PyPI" >> $GITHUB_STEP_SUMMARY
-
-      - name: Update version in pyproject.toml
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
-          echo "Updated pyproject.toml version to: $VERSION"
-          cat pyproject.toml | grep "^version"
-
-      - name: Build package
-        run: |
-          python -m build
-          echo "### Built Packages" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          ls -lh dist/ >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-      - name: Check package
-        run: |
-          python -m twine check dist/*
-          echo "✅ Package validation passed" >> $GITHUB_STEP_SUMMARY
+      - name: Check packages
+        run: python -m twine check dist/*
 
       - name: Publish to PyPI
         env:
@@ -200,14 +350,17 @@ jobs:
         run: |
           python -m twine upload dist/* --verbose
           echo "✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Install with: \`pip install mcp-sandbox-toolkit\`" >> $GITHUB_STEP_SUMMARY
-          echo "or: \`uv tool install mcp-sandbox-toolkit\`" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload Python artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-${{ steps.get_version.outputs.VERSION }}
-          path: dist/
-          retention-days: 90
+      - name: Create summary
+        run: |
+          echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Packages:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -la dist/ >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install: \`pip install mcp-sandbox-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "or: \`uv tool install mcp-sandbox-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "or: \`pipx install mcp-sandbox-toolkit\`" >> $GITHUB_STEP_SUMMARY
 

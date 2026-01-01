@@ -13,7 +13,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "MCP Toolkit Authors", email = "your-email@example.com"},
+    {name = "MCP Toolkit Authors", email = "shibingli@yeah.net"},
 ]
 keywords = ["mcp", "model-context-protocol", "file-system", "toolkit", "sandbox"]
 classifiers = [
@@ -45,6 +45,16 @@ mcp-toolkit-uninstall = "mcp_toolkit_wrapper:uninstall_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["python/mcp_toolkit_wrapper"]
+
+# 排除 .gitkeep 文件 / Exclude .gitkeep files
+[tool.hatch.build]
+exclude = [
+    "**/.gitkeep",
+]
+
+# 包含 bin 目录（用于嵌入式二进制文件）/ Include bin directory for embedded binary
+[tool.hatch.build.targets.wheel.force-include]
+"python/mcp_toolkit_wrapper/bin" = "mcp_toolkit_wrapper/bin"
 
 [dependency-groups]
 dev = []
