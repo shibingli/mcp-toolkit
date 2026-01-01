@@ -41,10 +41,11 @@ Changelog = "https://github.com/shibingli/mcp-toolkit/releases"
 [project.scripts]
 mcp-sandbox-toolkit = "mcp_toolkit_wrapper:main"
 mcp-toolkit = "mcp_toolkit_wrapper:main"
+mcp-toolkit-uninstall = "mcp_toolkit_wrapper:uninstall_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["python/mcp_toolkit_wrapper"]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = []
 

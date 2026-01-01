@@ -11,9 +11,11 @@ import urllib.request
 import tarfile
 import zipfile
 import json
+import shutil
+import sysconfig
 import importlib.metadata
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 # 配置 / Configuration
 REPO = "shibingli/mcp-toolkit"
@@ -23,6 +25,72 @@ try:
     VERSION = importlib.metadata.version("mcp-sandbox-toolkit")
 except importlib.metadata.PackageNotFoundError:
     VERSION = "0.0.0-dev"
+
+
+def is_dev_version(version: str) -> bool:
+    """
+    检查是否为开发版本 / Check if version is a development version
+
+    Args:
+        version: 版本号 / Version number
+
+    Returns:
+        bool: 是否为开发版本 / Whether it's a development version
+    """
+    if not version:
+        return True
+    version_lower = version.lower()
+    return (
+        "dev" in version_lower or
+        version.startswith("0.0.0") or
+        version == "0.0.0-dev"
+    )
+
+
+def get_scripts_dir() -> Optional[Path]:
+    """
+    获取当前 Python 环境的 scripts 目录
+    Get the scripts directory of the current Python environment
+
+    Returns:
+        Optional[Path]: scripts 目录路径，如果无法获取则返回 None
+    """
+    try:
+        # 优先使用 sysconfig 获取 scripts 目录
+        scripts_path = sysconfig.get_path('scripts')
+        if scripts_path:
+            scripts_dir = Path(scripts_path)
+            # 检查是否可写
+            if scripts_dir.exists() and os.access(scripts_dir, os.W_OK):
+                return scripts_dir
+            # 尝试创建目录
+            try:
+                scripts_dir.mkdir(parents=True, exist_ok=True)
+                return scripts_dir
+            except (PermissionError, OSError):
+                pass
+    except Exception:
+        pass
+
+    return None
+
+
+def get_user_install_dir() -> Path:
+    """
+    获取用户级安装目录（回退方案）
+    Get user-level installation directory (fallback)
+
+    Returns:
+        Path: 用户级安装目录
+    """
+    if sys.platform == "win32":
+        base_dir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        install_dir = base_dir / "Programs" / "mcp-toolkit"
+    else:
+        install_dir = Path.home() / ".local" / "bin"
+
+    install_dir.mkdir(parents=True, exist_ok=True)
+    return install_dir
 
 
 def get_platform_info() -> tuple[str, str]:
@@ -63,37 +131,86 @@ def get_binary_name() -> str:
 
 
 def get_install_dir() -> Path:
-    """获取安装目录 / Get installation directory"""
-    if sys.platform == "win32":
-        base_dir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-        install_dir = base_dir / "Programs" / "mcp-toolkit"
-    else:
-        install_dir = Path.home() / ".local" / "bin"
-    
-    install_dir.mkdir(parents=True, exist_ok=True)
-    return install_dir
+    """
+    获取安装目录 / Get installation directory
+
+    优先使用 Python 环境的 scripts 目录，这样 pip uninstall 时会自动清理
+    Prefer Python environment's scripts directory so pip uninstall cleans up automatically
+
+    Returns:
+        Path: 安装目录路径
+    """
+    # 优先使用 Python 环境的 scripts 目录
+    scripts_dir = get_scripts_dir()
+    if scripts_dir:
+        return scripts_dir
+
+    # 回退到用户级目录
+    return get_user_install_dir()
+
+
+def get_all_possible_binary_paths() -> List[Path]:
+    """
+    获取所有可能的二进制文件路径（用于卸载时清理）
+    Get all possible binary paths (for cleanup during uninstall)
+
+    Returns:
+        List[Path]: 所有可能的二进制文件路径列表
+    """
+    binary_name = get_binary_name()
+    paths = []
+
+    # Python 环境的 scripts 目录
+    scripts_dir = get_scripts_dir()
+    if scripts_dir:
+        paths.append(scripts_dir / binary_name)
+
+    # 用户级目录
+    user_dir = get_user_install_dir()
+    paths.append(user_dir / binary_name)
+
+    return paths
 
 
 def get_binary_path() -> Path:
-    """获取二进制文件路径 / Get binary path"""
-    return get_install_dir() / get_binary_name()
+    """
+    获取二进制文件路径 / Get binary path
+
+    首先检查是否已存在于任何可能的位置，如果存在则返回该路径
+    否则返回默认安装目录的路径
+
+    Returns:
+        Path: 二进制文件路径
+    """
+    binary_name = get_binary_name()
+
+    # 检查所有可能的位置
+    for path in get_all_possible_binary_paths():
+        if path.exists():
+            return path
+
+    # 返回默认安装目录
+    return get_install_dir() / binary_name
 
 
 def get_latest_version() -> str:
     """
     从 GitHub API 获取最新版本 / Get latest version from GitHub API
-    
+
     Returns:
         str: 版本号 / Version number
+
+    Raises:
+        RuntimeError: 如果无法获取最新版本 / If failed to get latest version
     """
     try:
         url = f"https://api.github.com/repos/{REPO}/releases/latest"
-        with urllib.request.urlopen(url) as response:
+        req = urllib.request.Request(url, headers={"User-Agent": "mcp-toolkit-installer"})
+        with urllib.request.urlopen(req, timeout=30) as response:
             data = json.loads(response.read().decode())
             return data["tag_name"]
     except Exception as e:
-        print(f"Warning: Failed to get latest version, using default {VERSION}: {e}")
-        return f"v{VERSION}"
+        raise RuntimeError(f"Failed to get latest version from GitHub: {e}")
 
 
 def download_binary(version: Optional[str] = None) -> Path:
@@ -169,46 +286,100 @@ def extract_binary(archive_path: Path) -> Path:
     raise RuntimeError(f"Binary {binary_name} not found in archive")
 
 
-def install_binary(version: Optional[str] = None) -> Path:
+def get_installed_version() -> Optional[str]:
+    """
+    获取已安装的二进制文件版本 / Get installed binary version
+
+    Returns:
+        Optional[str]: 版本号，如果未安装则返回 None / Version number, None if not installed
+    """
+    binary_path = get_binary_path()
+    if not binary_path.exists():
+        return None
+
+    try:
+        result = subprocess.run(
+            [str(binary_path), "-version"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode == 0:
+            # 解析版本号，输出格式为 "mcp-toolkit version v1.5.2"
+            # 提取第一行并解析版本号
+            output = result.stdout.strip()
+            first_line = output.split('\n')[0] if output else ""
+            # 查找 "version" 后面的版本号
+            parts = first_line.split()
+            for i, part in enumerate(parts):
+                if part == "version" and i + 1 < len(parts):
+                    version = parts[i + 1].lstrip("v")
+                    return version
+            # 备用解析：查找 vX.X.X 格式
+            for part in parts:
+                if part.startswith("v") and '.' in part:
+                    return part.lstrip("v")
+            return None
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError, IndexError):
+        pass
+
+    return None
+
+
+def install_binary(version: Optional[str] = None, force: bool = False) -> Path:
     """
     安装二进制文件 / Install binary
-    
+
     Args:
         version: 版本号，如果为 None 则使用最新版本 / Version number, use latest if None
-    
+        force: 是否强制重新安装 / Whether to force reinstall
+
     Returns:
         Path: 安装后的二进制文件路径 / Installed binary path
     """
-    # 检查是否已安装 / Check if already installed
     binary_path = get_binary_path()
-    if binary_path.exists():
-        print(f"MCP Toolkit is already installed at: {binary_path}")
-        return binary_path
-    
+
+    # 获取目标版本 / Get target version
+    target_version = version if version else get_latest_version()
+    target_version_clean = target_version.lstrip("v")
+
+    # 检查是否已安装且版本匹配 / Check if already installed with matching version
+    if binary_path.exists() and not force:
+        installed_version = get_installed_version()
+        if installed_version:
+            if installed_version == target_version_clean:
+                # 版本匹配，静默返回 / Version matches, return silently
+                return binary_path
+            else:
+                print(f"Upgrading MCP Toolkit from {installed_version} to {target_version_clean}...")
+        else:
+            print(f"Cannot determine installed version, reinstalling...")
+    elif not binary_path.exists():
+        print(f"Installing MCP Toolkit {target_version_clean}...")
+
     # 下载 / Download
-    archive_path = download_binary(version)
-    
+    archive_path = download_binary(target_version)
+
     # 解压 / Extract
     extracted_binary = extract_binary(archive_path)
-    
+
     # 安装 / Install
     install_dir = get_install_dir()
     final_binary = install_dir / get_binary_name()
-    
+
     print(f"Installing to: {final_binary}")
-    
+
     # 复制文件 / Copy file
-    import shutil
     shutil.copy2(extracted_binary, final_binary)
-    
+
     # 设置执行权限 (Unix-like systems) / Set execute permission
     if sys.platform != "win32":
         os.chmod(final_binary, 0o755)
-    
+
     # 清理临时文件 / Clean up temp files
     shutil.rmtree(archive_path.parent / "extracted", ignore_errors=True)
     archive_path.unlink(missing_ok=True)
-    
+
     print(f"✓ MCP Toolkit installed successfully!")
     print(f"  Binary: {final_binary}")
 
@@ -242,23 +413,201 @@ def install_binary(version: Optional[str] = None) -> Path:
     return final_binary
 
 
+def uninstall_binary() -> bool:
+    """
+    卸载二进制文件 / Uninstall binary
+
+    清理所有可能的安装位置和缓存目录
+    Clean up all possible installation locations and cache directory
+
+    Returns:
+        bool: 是否成功卸载 / Whether uninstall was successful
+    """
+    cache_dir = Path.home() / ".cache" / "mcp-toolkit"
+    user_install_dir = get_user_install_dir()
+
+    success = True
+    found_any = False
+
+    # 删除所有可能位置的二进制文件 / Delete binary files from all possible locations
+    for binary_path in get_all_possible_binary_paths():
+        if binary_path.exists():
+            found_any = True
+            try:
+                binary_path.unlink()
+                print(f"✓ Removed binary: {binary_path}")
+            except Exception as e:
+                print(f"✗ Failed to remove binary {binary_path}: {e}", file=sys.stderr)
+                success = False
+
+    if not found_any:
+        print("No binary files found to remove.")
+
+    # 清理缓存目录 / Clean up cache directory
+    if cache_dir.exists():
+        try:
+            shutil.rmtree(cache_dir)
+            print(f"✓ Removed cache directory: {cache_dir}")
+        except Exception as e:
+            print(f"✗ Failed to remove cache directory: {e}", file=sys.stderr)
+            success = False
+
+    # 尝试删除用户安装目录（如果为空）/ Try to remove user install directory if empty
+    if user_install_dir.exists():
+        try:
+            # 只有当目录为空时才删除
+            if not any(user_install_dir.iterdir()):
+                user_install_dir.rmdir()
+                print(f"✓ Removed empty directory: {user_install_dir}")
+        except Exception:
+            pass  # 忽略错误，目录可能不为空或无权限
+
+    if success:
+        print("\n✓ MCP Toolkit binary uninstalled successfully!")
+
+    return success
+
+
+def print_version_info():
+    """打印版本信息 / Print version information"""
+    print(f"Python wrapper version: {VERSION}")
+    installed = get_installed_version()
+    if installed:
+        print(f"Binary version: {installed}")
+    else:
+        print("Binary: not installed")
+    print(f"Binary path: {get_binary_path()}")
+
+
+def print_help():
+    """打印帮助信息 / Print help information"""
+    print("""MCP Toolkit - Python Wrapper
+
+Usage:
+  mcp-sandbox-toolkit [options] [binary-args...]
+
+Wrapper Options:
+  --install-binary     Force install/reinstall the binary
+  --uninstall-binary   Remove the binary and cache files
+  --upgrade-binary     Upgrade binary to match Python package version
+  --binary-version     Show version information
+  --binary-path        Show binary installation path
+  --wrapper-help       Show this help message
+
+All other arguments are passed directly to the mcp-toolkit binary.
+
+Examples:
+  mcp-sandbox-toolkit --install-binary    # Install the binary
+  mcp-sandbox-toolkit --uninstall-binary  # Remove the binary
+  mcp-sandbox-toolkit -version            # Show binary version (passed to binary)
+  mcp-sandbox-toolkit --help              # Show binary help (passed to binary)
+
+Uninstall (for all package managers):
+  Step 1: Clean up binary files first
+    mcp-toolkit-uninstall
+    # or: mcp-sandbox-toolkit --uninstall-binary
+
+  Step 2: Uninstall Python package
+    pip:   pip uninstall mcp-sandbox-toolkit
+    pipx:  pipx uninstall mcp-sandbox-toolkit
+    uv:    uv pip uninstall mcp-sandbox-toolkit
+           # or: uv remove mcp-sandbox-toolkit
+
+Note: The binary is installed in Python's scripts directory, so it will be
+automatically removed when you uninstall the package. However, running
+mcp-toolkit-uninstall first ensures complete cleanup of cache files.
+""")
+
+
 def main():
     """主函数，用于命令行调用 / Main function for CLI"""
-    binary_path = get_binary_path()
-    
-    # 如果未安装，先安装 / Install if not installed
-    if not binary_path.exists():
-        print("MCP Toolkit not found, installing...")
-        binary_path = install_binary()
-    
+    # 处理包装器特定的命令行参数 / Handle wrapper-specific command line arguments
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+
+        if arg == "--install-binary":
+            # 强制安装二进制文件 / Force install binary
+            target_version = None
+            if not is_dev_version(VERSION):
+                target_version = f"v{VERSION}" if not VERSION.startswith("v") else VERSION
+            install_binary(version=target_version, force=True)
+            sys.exit(0)
+
+        elif arg == "--uninstall-binary":
+            # 卸载二进制文件 / Uninstall binary
+            success = uninstall_binary()
+            sys.exit(0 if success else 1)
+
+        elif arg == "--upgrade-binary":
+            # 升级二进制文件 / Upgrade binary
+            target_version = None
+            if not is_dev_version(VERSION):
+                target_version = f"v{VERSION}" if not VERSION.startswith("v") else VERSION
+            install_binary(version=target_version, force=True)
+            sys.exit(0)
+
+        elif arg == "--binary-version":
+            # 显示版本信息 / Show version info
+            print_version_info()
+            sys.exit(0)
+
+        elif arg == "--binary-path":
+            # 显示二进制路径 / Show binary path
+            print(get_binary_path())
+            sys.exit(0)
+
+        elif arg == "--wrapper-help":
+            # 显示帮助信息 / Show help
+            print_help()
+            sys.exit(0)
+
+    # 确定目标版本 / Determine target version
+    # 如果是开发版本，使用 GitHub 最新版本 / If dev version, use GitHub latest
+    if is_dev_version(VERSION):
+        target_version = None  # 将使用 get_latest_version()
+    else:
+        target_version = f"v{VERSION}" if not VERSION.startswith("v") else VERSION
+
+    # 安装或更新二进制文件 / Install or update binary
+    try:
+        binary_path = install_binary(version=target_version)
+    except Exception as e:
+        print(f"Error installing MCP Toolkit: {e}", file=sys.stderr)
+        # 如果安装失败但二进制文件存在，尝试使用现有的 / If install fails but binary exists, try using existing
+        binary_path = get_binary_path()
+        if not binary_path.exists():
+            sys.exit(1)
+        print(f"Using existing binary: {binary_path}", file=sys.stderr)
+
     # 执行二进制文件 / Execute binary
     try:
-        subprocess.run([str(binary_path)] + sys.argv[1:])
+        result = subprocess.run([str(binary_path)] + sys.argv[1:])
+        sys.exit(result.returncode)
     except KeyboardInterrupt:
         sys.exit(0)
     except Exception as e:
         print(f"Error running MCP Toolkit: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def uninstall_main():
+    """
+    卸载入口函数，用于 pip uninstall 前清理二进制文件
+    Uninstall entry point for cleaning up binary before pip uninstall
+    """
+    print("MCP Toolkit Uninstaller")
+    print("=" * 40)
+    success = uninstall_binary()
+
+    if success:
+        print("\nTo complete uninstallation, run one of the following:")
+        print()
+        print("  pip:   pip uninstall mcp-sandbox-toolkit")
+        print("  pipx:  pipx uninstall mcp-sandbox-toolkit")
+        print("  uv:    uv pip uninstall mcp-sandbox-toolkit")
+        print("         # or: uv remove mcp-sandbox-toolkit")
+
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

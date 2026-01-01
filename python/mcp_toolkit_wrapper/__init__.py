@@ -20,7 +20,7 @@ except importlib.metadata.PackageNotFoundError:
 __author__ = "MCP Toolkit Authors"
 __license__ = "Apache-2.0"
 
-from .installer import install_binary, get_binary_path, main
+from .installer import install_binary, uninstall_binary, get_binary_path, main, uninstall_main
 
-__all__ = ["install_binary", "get_binary_path", "main", "__version__"]
+__all__ = ["install_binary", "uninstall_binary", "get_binary_path", "main", "uninstall_main", "__version__"]
 
