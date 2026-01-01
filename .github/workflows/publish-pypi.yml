@@ -139,6 +139,10 @@ jobs:
       - name: Extract binary
         run: |
           mkdir -p python/mcp_toolkit_wrapper/bin
+          # 删除 .gitkeep 文件以避免 wheel 中出现重复文件
+          # Remove .gitkeep to avoid duplicate files in wheel
+          rm -f python/mcp_toolkit_wrapper/bin/.gitkeep
+
           cd downloads
 
           ARCHIVE_NAME="mcp-toolkit-${{ needs.get-version.outputs.version_tag }}-${{ matrix.os }}-${{ matrix.arch }}.${{ matrix.archive_ext }}"
