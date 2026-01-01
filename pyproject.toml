@@ -43,18 +43,20 @@ mcp-sandbox-toolkit = "mcp_toolkit_wrapper:main"
 mcp-toolkit = "mcp_toolkit_wrapper:main"
 mcp-toolkit-uninstall = "mcp_toolkit_wrapper:uninstall_main"
 
+# Wheel 构建配置
 [tool.hatch.build.targets.wheel]
 packages = ["python/mcp_toolkit_wrapper"]
-
-# 排除 .gitkeep 文件 / Exclude .gitkeep files
-[tool.hatch.build]
+# 只包含二进制文件，不包含 .gitkeep
+# Only include binary files, not .gitkeep
+artifacts = [
+    "python/mcp_toolkit_wrapper/bin/mcp-toolkit",
+    "python/mcp_toolkit_wrapper/bin/mcp-toolkit.exe",
+]
+# 排除 .gitkeep 文件
 exclude = [
     "**/.gitkeep",
+    "**/bin/.gitkeep",
 ]
-
-# 包含 bin 目录（用于嵌入式二进制文件）/ Include bin directory for embedded binary
-[tool.hatch.build.targets.wheel.force-include]
-"python/mcp_toolkit_wrapper/bin" = "mcp_toolkit_wrapper/bin"
 
 [dependency-groups]
 dev = []
