@@ -125,6 +125,8 @@ mcp-toolkit --help
 
 # 或使用 uvx 直接运行（无需安装）/ Or use uvx to run directly (no installation needed)
 uvx mcp-sandbox-toolkit --help
+# 或使用 uvx 使用运行最新版的工具 / Or use uvx to run the latest version of the tool
+uvx --refresh mcp-sandbox-toolkit
 ```
 
 **配置 PATH (如果需要) / Configure PATH (if needed)**:
