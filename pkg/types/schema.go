@@ -658,7 +658,7 @@ var ToolSchemas = map[string]JSONSchema{
 				Type:        "string",
 				Description: "The URL to download from. Must be a valid HTTP or HTTPS URL. Examples: 'https://example.com/api/report.pdf', 'http://cdn.example.com/data/users.json', 'https://raw.githubusercontent.com/user/repo/main/README.md'.",
 				MinLength:   intPtr(1),
-				Pattern:     "^https?://.*",
+				Pattern:     "^https?://.*$",
 				Examples:    []any{"https://example.com/down/report.pdf", "http://cdn.example.com/data/users.json", "https://raw.githubusercontent.com/user/repo/main/README.md"},
 			},
 			"path": {

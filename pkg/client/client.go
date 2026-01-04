@@ -49,6 +49,7 @@ type HTTPClient struct {
 	httpClient *http.Client
 	logger     *zap.Logger
 	requestID  int64
+	sessionID  string // 会话ID / Session ID
 }
 
 // NewHTTPClient 创建HTTP客户端 / Create HTTP client
@@ -157,6 +158,12 @@ func (c *HTTPClient) sendRequest(ctx context.Context, mcpReq *types.MCPRequest, 
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+
+	// 如果有会话ID，添加到请求头 / Add session ID to header if exists
+	if c.sessionID != "" {
+		httpReq.Header.Set("Mcp-Session-Id", c.sessionID)
+	}
 
 	// 发送请求 / Send request
 	httpResp, err := c.httpClient.Do(httpReq)
@@ -169,6 +176,12 @@ func (c *HTTPClient) sendRequest(ctx context.Context, mcpReq *types.MCPRequest, 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// 保存会话ID / Save session ID
+	if sessionID := httpResp.Header.Get("Mcp-Session-Id"); sessionID != "" {
+		c.sessionID = sessionID
+		c.logger.Debug("session ID updated", zap.String("session_id", sessionID))
 	}
 
 	c.logger.Debug("received response",
