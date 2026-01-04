@@ -41,7 +41,8 @@ func TestCommandHistory(t *testing.T) {
 	for _, entry := range histResp.History {
 		assert.NotEmpty(t, entry.ID)
 		assert.Equal(t, getEchoCommand(), entry.Command)
-		assert.NotZero(t, entry.Duration)
+		// Duration 可能为 0（在快速执行的环境中），所以只检查非负数 / Duration may be 0 (in fast execution environments), so only check non-negative
+		assert.GreaterOrEqual(t, entry.Duration, int64(0))
 		assert.True(t, entry.Success)
 		assert.Equal(t, 0, entry.ExitCode)
 	}
