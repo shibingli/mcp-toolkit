@@ -121,7 +121,7 @@ uv tool upgrade mcp-sandbox-toolkit
 
 # 或使用 uvx 直接运行（无需安装）/ Or use uvx to run directly (no installation needed)
 uvx mcp-sandbox-toolkit --help
-# 或使用 uvx 使用运行最新版的工具 / Or use uvx to run the latest version of the tool
+# 或使用 uvx 运行最新版的工具 / Or use uvx to run the latest version of the tool
 uvx --refresh mcp-sandbox-toolkit
 
 # 运行程序（两个命令都可以）/ Run the program (both commands work)
