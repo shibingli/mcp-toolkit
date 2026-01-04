@@ -28,7 +28,7 @@ func NewComprehensiveTestSuite(mcpClient client.Client) *ComprehensiveTestSuite 
 
 // RunAllTests 运行所有测试 / Run all tests
 func (s *ComprehensiveTestSuite) RunAllTests() []TestResult {
-	fmt.Println("\n=== 开始全面测试 MCP Toolkit 所有功能 ===\n")
+	fmt.Println("\n=== 开始全面测试 MCP Toolkit 所有功能 ===")
 
 	// 1. 文件操作工具测试 / File operation tools tests
 	s.testFileOperations()
