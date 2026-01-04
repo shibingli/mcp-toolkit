@@ -3,12 +3,15 @@ package sandbox
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
+
+	"mcp-toolkit/pkg/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"mcp-toolkit/pkg/types"
 )
 
 // setupTestService 创建测试服务实例 / Create test service instance
@@ -26,8 +29,26 @@ func setupTestService(t *testing.T) (*Service, string) {
 
 // cleanupTestService 清理测试服务 / Cleanup test service
 func cleanupTestService(t *testing.T, tempDir string) {
-	err := os.RemoveAll(tempDir)
-	require.NoError(t, err)
+	// 在 Windows 上，可能需要多次尝试删除，因为进程可能还持有文件句柄
+	// On Windows, may need multiple attempts to delete as processes may still hold file handles
+	var err error
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		err = os.RemoveAll(tempDir)
+		if err == nil {
+			return
+		}
+		if runtime.GOOS == "windows" && i < maxRetries-1 {
+			// 等待一段时间后重试 / Wait and retry
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		break
+	}
+	// 如果最终还是失败，只记录警告而不是失败测试 / If still fails, just log warning instead of failing test
+	if err != nil {
+		t.Logf("Warning: failed to cleanup temp directory %s: %v", tempDir, err)
+	}
 }
 
 func TestNewService(t *testing.T) {

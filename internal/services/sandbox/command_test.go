@@ -17,10 +17,10 @@ func TestExecuteCommand(t *testing.T) {
 	defer cleanupTestService(t, tempDir)
 
 	tests := []struct {
-		name        string
-		request     *types.ExecuteCommandRequest
-		expectError bool
-		checkOutput bool
+		name          string
+		request       *types.ExecuteCommandRequest
+		expectSuccess bool
+		checkOutput   bool
 	}{
 		{
 			name: "执行简单命令",
@@ -29,8 +29,28 @@ func TestExecuteCommand(t *testing.T) {
 				Args:    []string{"hello"},
 				WorkDir: ".",
 			},
-			expectError: false,
-			checkOutput: true,
+			expectSuccess: true,
+			checkOutput:   true,
+		},
+		{
+			name: "执行带空格参数的命令",
+			request: &types.ExecuteCommandRequest{
+				Command: getEchoCommand(),
+				Args:    getEchoArgs("hello world"),
+				WorkDir: ".",
+			},
+			expectSuccess: true,
+			checkOutput:   true,
+		},
+		{
+			name: "执行无参数命令",
+			request: &types.ExecuteCommandRequest{
+				Command: getPwdCommand(),
+				Args:    []string{},
+				WorkDir: ".",
+			},
+			expectSuccess: true,
+			checkOutput:   true,
 		},
 		{
 			name: "黑名单命令应被拒绝",
@@ -39,7 +59,7 @@ func TestExecuteCommand(t *testing.T) {
 				Args:    []string{},
 				WorkDir: ".",
 			},
-			expectError: true,
+			expectSuccess: false,
 		},
 		{
 			name: "无效工作目录",
@@ -48,7 +68,26 @@ func TestExecuteCommand(t *testing.T) {
 				Args:    []string{"test"},
 				WorkDir: "../..",
 			},
-			expectError: true,
+			expectSuccess: false,
+		},
+		{
+			name: "空命令应被拒绝",
+			request: &types.ExecuteCommandRequest{
+				Command: "",
+				Args:    []string{},
+				WorkDir: ".",
+			},
+			expectSuccess: false,
+		},
+		{
+			name: "超时设置",
+			request: &types.ExecuteCommandRequest{
+				Command: getEchoCommand(),
+				Args:    getEchoArgs("timeout test"),
+				WorkDir: ".",
+				Timeout: 5,
+			},
+			expectSuccess: true,
 		},
 	}
 
@@ -56,14 +95,21 @@ func TestExecuteCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := service.ExecuteCommand(tt.request)
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.NotNil(t, resp)
+			// ExecuteCommand 现在总是返回响应对象,不返回错误 / ExecuteCommand now always returns response, no error
+			require.NoError(t, err)
+			assert.NotNil(t, resp)
+
+			if tt.expectSuccess {
+				assert.True(t, resp.Success)
+				assert.Equal(t, 0, resp.ExitCode)
+				assert.NotEmpty(t, resp.CommandLine) // 验证命令行字段存在 / Verify command line field exists
 				if tt.checkOutput {
 					assert.NotEmpty(t, resp.Stdout)
 				}
+			} else {
+				assert.False(t, resp.Success)
+				assert.Equal(t, -1, resp.ExitCode)
+				assert.NotEmpty(t, resp.Stderr) // 错误信息应该在 Stderr 中 / Error message should be in Stderr
 			}
 		})
 	}
@@ -224,6 +270,30 @@ func getEchoCommand() string {
 	return "echo"
 }
 
+// getEchoArgs 获取跨平台的echo命令参数 / Get cross-platform echo command arguments
+func getEchoArgs(text string) []string {
+	if runtime.GOOS == "windows" {
+		return []string{"/c", "echo", text}
+	}
+	return []string{text}
+}
+
+// getPwdCommand 获取跨平台的pwd命令 / Get cross-platform pwd command
+func getPwdCommand() string {
+	if runtime.GOOS == "windows" {
+		return "cmd"
+	}
+	return "pwd"
+}
+
+// getFailCommand 获取一个会失败的命令 / Get a command that will fail
+func getFailCommand() string {
+	if runtime.GOOS == "windows" {
+		return "cmd"
+	}
+	return "false"
+}
+
 // getSystemDirectory 获取系统目录用于测试 / Get system directory for testing
 func getSystemDirectory() string {
 	switch runtime.GOOS {
@@ -352,7 +422,9 @@ func TestExecuteRmCommand(t *testing.T) {
 	resp, err := service.ExecuteCommand(req)
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
 	assert.Equal(t, 0, resp.ExitCode)
+	assert.NotEmpty(t, resp.CommandLine) // 验证命令行字段存在 / Verify command line field exists
 
 	// 验证文件已被删除 / Verify file is deleted
 	_, err = os.Stat(testFile)
@@ -397,11 +469,13 @@ func TestExecuteRmCommandOutsideSandbox(t *testing.T) {
 				WorkDir: ".",
 			}
 
-			_, err := service.ExecuteCommand(req)
-			assert.Error(t, err)
-			if err != nil {
-				assert.Contains(t, err.Error(), "outside sandbox")
-			}
+			resp, err := service.ExecuteCommand(req)
+			require.NoError(t, err) // ExecuteCommand 不再返回错误 / ExecuteCommand no longer returns error
+			assert.NotNil(t, resp)
+			assert.False(t, resp.Success)                      // 应该失败 / Should fail
+			assert.Equal(t, -1, resp.ExitCode)                 // 退出码应该是-1 / Exit code should be -1
+			assert.Contains(t, resp.Stderr, "outside sandbox") // 错误信息在 Stderr 中 / Error message in Stderr
+			assert.NotEmpty(t, resp.CommandLine)               // 验证命令行字段存在 / Verify command line field exists
 		})
 	}
 }

@@ -561,8 +561,19 @@ func (s *Service) handleGetSystemInfo(_ context.Context, _ *mcp.CallToolRequest,
 // handleExecuteCommand 处理执行命令请求 / Handle execute command request
 func (s *Service) handleExecuteCommand(_ context.Context, _ *mcp.CallToolRequest, args types.ExecuteCommandRequest) (*mcp.CallToolResult, *types.ExecuteCommandResponse, error) {
 	resp, err := s.ExecuteCommand(&args)
+	// 即使发生错误,也返回响应对象(如果存在) / Return response object even if error occurs (if exists)
 	if err != nil {
-		return nil, nil, err
+		// 如果响应对象为nil,创建一个错误响应 / If response is nil, create an error response
+		if resp == nil {
+			resp = &types.ExecuteCommandResponse{
+				Success:     false,
+				ExitCode:    -1,
+				Stdout:      "",
+				Stderr:      err.Error(),
+				Message:     "命令执行失败 / Command execution failed",
+				CommandLine: args.Command,
+			}
+		}
 	}
 
 	resultJSON, _ := json.MarshalToString(resp)
@@ -1161,8 +1172,9 @@ func (s *Service) wrapExecuteCommand(ctx context.Context, arguments interface{})
 	if err = json.Unmarshal(argsJSON, &args); err != nil {
 		return nil, err
 	}
-	result, _, err := s.handleExecuteCommand(ctx, nil, args)
-	return result, err
+	result, _, _ := s.handleExecuteCommand(ctx, nil, args)
+	// handleExecuteCommand 现在总是返回结果,不再返回错误 / handleExecuteCommand now always returns result, no error
+	return result, nil
 }
 
 func (s *Service) wrapGetCommandBlacklist(ctx context.Context, arguments interface{}) (*mcp.CallToolResult, error) {

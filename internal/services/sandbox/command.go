@@ -22,9 +22,32 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	// 记录开始时间 / Record start time
 	startTime := time.Now()
 
+	// 构建完整的命令行字符串(用于错误响应) / Build full command line string (for error response)
+	var commandLine strings.Builder
+	commandLine.WriteString(req.Command)
+	for _, arg := range req.Args {
+		commandLine.WriteString(" ")
+		// 如果参数包含空格,用引号包裹 / Wrap argument with quotes if it contains spaces
+		if strings.Contains(arg, " ") {
+			commandLine.WriteString("\"")
+			commandLine.WriteString(arg)
+			commandLine.WriteString("\"")
+		} else {
+			commandLine.WriteString(arg)
+		}
+	}
+	fullCommandLine := commandLine.String()
+
 	// 参数验证 / Parameter validation
 	if err := validateExecuteCommandRequest(req); err != nil {
-		return nil, err
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      err.Error(),
+			Message:     "参数验证失败 / Parameter validation failed",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	// 权限检查 / Permission check
@@ -32,7 +55,14 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 		s.logger.Warn("command permission denied",
 			zap.String("command", req.Command),
 			zap.Error(err))
-		return nil, err
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      err.Error(),
+			Message:     "权限检查失败 / Permission check failed",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	// 获取必要的配置信息 / Get necessary configuration
@@ -42,7 +72,14 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 		s.mu.RUnlock()
 		s.logger.Warn("blocked blacklisted command",
 			zap.String("command", req.Command))
-		return nil, errors.New(types.ErrCommandBlacklisted)
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      types.ErrCommandBlacklisted,
+			Message:     "命令在黑名单中 / Command is blacklisted",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	// 验证工作目录 / Validate working directory
@@ -54,7 +91,14 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	validWorkDir, err := s.validatePath(workDir)
 	if err != nil {
 		s.mu.RUnlock()
-		return nil, err
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      err.Error(),
+			Message:     "工作目录验证失败 / Working directory validation failed",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	// 检查工作目录是否在黑名单中 / Check if working directory is in blacklist
@@ -62,17 +106,31 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 		s.mu.RUnlock()
 		s.logger.Warn("blocked blacklisted directory",
 			zap.String("directory", validWorkDir))
-		return nil, errors.New(types.ErrDirectoryBlacklisted)
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      types.ErrDirectoryBlacklisted,
+			Message:     "目录在黑名单中 / Directory is blacklisted",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	// 验证命令参数中的路径 / Validate paths in command arguments
-	if err := s.validateCommandPaths(req.Command, req.Args, validWorkDir); err != nil {
+	if err = s.validateCommandPaths(req.Command, req.Args, validWorkDir); err != nil {
 		s.mu.RUnlock()
 		s.logger.Warn("command contains invalid paths",
 			zap.String("command", req.Command),
 			zap.Strings("args", req.Args),
 			zap.Error(err))
-		return nil, err
+		return &types.ExecuteCommandResponse{
+			Success:     false,
+			ExitCode:    -1,
+			Stdout:      "",
+			Stderr:      err.Error(),
+			Message:     "命令参数验证失败 / Command arguments validation failed",
+			CommandLine: fullCommandLine,
+		}, nil
 	}
 
 	permLevel := s.permissionLevel
@@ -111,7 +169,8 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	s.logger.Info("executing command",
 		zap.String("command", req.Command),
 		zap.Strings("args", req.Args),
-		zap.String("work_dir", validWorkDir))
+		zap.String("work_dir", validWorkDir),
+		zap.String("command_line", fullCommandLine))
 
 	err = cmd.Run()
 
@@ -150,11 +209,12 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	s.addCommandHistory(entry)
 
 	return &types.ExecuteCommandResponse{
-		Success:  success,
-		ExitCode: exitCode,
-		Stdout:   stdout.String(),
-		Stderr:   stderr.String(),
-		Message:  message,
+		Success:     success,
+		ExitCode:    exitCode,
+		Stdout:      stdout.String(),
+		Stderr:      stderr.String(),
+		Message:     message,
+		CommandLine: fullCommandLine,
 	}, nil
 }
 
