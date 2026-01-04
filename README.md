@@ -115,18 +115,18 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 使用 uv 安装 MCP Toolkit / Install MCP Toolkit using uv
 uv tool install mcp-sandbox-toolkit
-
 # 更新到最新版本 / Upgrade to the latest version
 uv tool upgrade mcp-sandbox-toolkit
 
-# 运行程序（两个命令都可以）/ Run the program (both commands work)
-mcp-sandbox-toolkit --help
-mcp-toolkit --help
 
 # 或使用 uvx 直接运行（无需安装）/ Or use uvx to run directly (no installation needed)
 uvx mcp-sandbox-toolkit --help
 # 或使用 uvx 使用运行最新版的工具 / Or use uvx to run the latest version of the tool
 uvx --refresh mcp-sandbox-toolkit
+
+# 运行程序（两个命令都可以）/ Run the program (both commands work)
+mcp-sandbox-toolkit --help
+mcp-toolkit --help
 ```
 
 **配置 PATH (如果需要) / Configure PATH (if needed)**:
