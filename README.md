@@ -937,7 +937,6 @@ Get complete system information including OS, CPU, memory, GPU, network interfac
 - [Recovery 功能文档](docs/RECOVERY.md) - Panic 恢复机制和稳定性保障
 - [安装指南](docs/INSTALLATION.md) - 详细的安装说明
 - [快速开始](docs/GETTING_STARTED.md) - 快速入门指南
-- [代码审查修复报告](CODE_REVIEW_FIXES.md) - 详细的修复记录
 
 ## 测试 / Testing
 

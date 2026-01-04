@@ -38,9 +38,21 @@ Execute command line command within sandbox directory.
   "exit_code": 0,
   "stdout": "total 8\ndrwxr-xr-x  3 user  staff   96 Jan  1 12:00 .\n",
   "stderr": "",
-  "message": "command executed successfully"
+   "message": "command executed successfully",
+   "command_line": "ls -la",
+   "current_work_dir": "."
 }
 ```
+
+**响应字段说明 / Response Fields:**
+
+- `success`: 命令是否成功执行（退出码为0）/ Whether command executed successfully (exit code is 0)
+- `exit_code`: 命令退出码 / Command exit code
+- `stdout`: 标准输出 / Standard output
+- `stderr`: 标准错误输出 / Standard error output
+- `message`: 执行结果消息 / Execution result message
+- `command_line`: 完整的命令行 / Full command line
+- `current_work_dir`: 当前工作目录（相对于沙箱根目录）/ Current working directory (relative to sandbox root)
 
 **使用示例 / Usage Examples:**
 

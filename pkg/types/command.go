@@ -57,12 +57,13 @@ type ExecuteCommandRequest struct {
 
 // ExecuteCommandResponse 执行命令响应 / Execute command response
 type ExecuteCommandResponse struct {
-	Success     bool   `json:"success"`      // 是否成功 / Whether successful
-	ExitCode    int    `json:"exit_code"`    // 退出码 / Exit code
-	Stdout      string `json:"stdout"`       // 标准输出 / Standard output
-	Stderr      string `json:"stderr"`       // 标准错误 / Standard error
-	Message     string `json:"message"`      // 消息 / Message
-	CommandLine string `json:"command_line"` // 完整的命令行 / Full command line
+	Success        bool   `json:"success"`          // 是否成功 / Whether successful
+	ExitCode       int    `json:"exit_code"`        // 退出码 / Exit code
+	Stdout         string `json:"stdout"`           // 标准输出 / Standard output
+	Stderr         string `json:"stderr"`           // 标准错误 / Standard error
+	Message        string `json:"message"`          // 消息 / Message
+	CommandLine    string `json:"command_line"`     // 完整的命令行 / Full command line
+	CurrentWorkDir string `json:"current_work_dir"` // 当前工作目录(相对于沙箱根目录) / Current working directory (relative to sandbox root)
 }
 
 // GetCommandBlacklistRequest 获取命令黑名单请求 / Get command blacklist request

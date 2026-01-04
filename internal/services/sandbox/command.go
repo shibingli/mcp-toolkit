@@ -17,6 +17,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// getCurrentWorkDir 获取当前工作目录(线程安全) / Get current working directory (thread-safe)
+func (s *Service) getCurrentWorkDir() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.currentWorkDir
+}
+
 // ExecuteCommand 执行命令 / Execute command
 func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.ExecuteCommandResponse, error) {
 	// 记录开始时间 / Record start time
@@ -41,12 +48,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	// 参数验证 / Parameter validation
 	if err := validateExecuteCommandRequest(req); err != nil {
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      err.Error(),
-			Message:     "参数验证失败 / Parameter validation failed",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         err.Error(),
+			Message:        "参数验证失败 / Parameter validation failed",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -56,12 +64,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 			zap.String("command", req.Command),
 			zap.Error(err))
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      err.Error(),
-			Message:     "权限检查失败 / Permission check failed",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         err.Error(),
+			Message:        "权限检查失败 / Permission check failed",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -73,12 +82,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 		s.logger.Warn("blocked blacklisted command",
 			zap.String("command", req.Command))
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      types.ErrCommandBlacklisted,
-			Message:     "命令在黑名单中 / Command is blacklisted",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         types.ErrCommandBlacklisted,
+			Message:        "命令在黑名单中 / Command is blacklisted",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -92,12 +102,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	if err != nil {
 		s.mu.RUnlock()
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      err.Error(),
-			Message:     "工作目录验证失败 / Working directory validation failed",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         err.Error(),
+			Message:        "工作目录验证失败 / Working directory validation failed",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -107,12 +118,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 		s.logger.Warn("blocked blacklisted directory",
 			zap.String("directory", validWorkDir))
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      types.ErrDirectoryBlacklisted,
-			Message:     "目录在黑名单中 / Directory is blacklisted",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         types.ErrDirectoryBlacklisted,
+			Message:        "目录在黑名单中 / Directory is blacklisted",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -124,12 +136,13 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 			zap.Strings("args", req.Args),
 			zap.Error(err))
 		return &types.ExecuteCommandResponse{
-			Success:     false,
-			ExitCode:    -1,
-			Stdout:      "",
-			Stderr:      err.Error(),
-			Message:     "命令参数验证失败 / Command arguments validation failed",
-			CommandLine: fullCommandLine,
+			Success:        false,
+			ExitCode:       -1,
+			Stdout:         "",
+			Stderr:         err.Error(),
+			Message:        "命令参数验证失败 / Command arguments validation failed",
+			CommandLine:    fullCommandLine,
+			CurrentWorkDir: s.getCurrentWorkDir(),
 		}, nil
 	}
 
@@ -208,13 +221,19 @@ func (s *Service) ExecuteCommand(req *types.ExecuteCommandRequest) (*types.Execu
 	)
 	s.addCommandHistory(entry)
 
+	// 获取当前工作目录(用于响应) / Get current working directory (for response)
+	s.mu.RLock()
+	currentWorkDir := s.currentWorkDir
+	s.mu.RUnlock()
+
 	return &types.ExecuteCommandResponse{
-		Success:     success,
-		ExitCode:    exitCode,
-		Stdout:      stdout.String(),
-		Stderr:      stderr.String(),
-		Message:     message,
-		CommandLine: fullCommandLine,
+		Success:        success,
+		ExitCode:       exitCode,
+		Stdout:         stdout.String(),
+		Stderr:         stderr.String(),
+		Message:        message,
+		CommandLine:    fullCommandLine,
+		CurrentWorkDir: currentWorkDir,
 	}, nil
 }
 
