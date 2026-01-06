@@ -109,6 +109,9 @@ func NewMCPErrorResponse(id interface{}, err *MCPError) *MCPResponse {
 type MCPToolsListRequest struct {
 	// Cursor 分页游标 / Pagination cursor
 	Cursor string `json:"cursor,omitempty"`
+
+	// Compact 是否返回精简版schema（减少token消耗） / Whether to return compact schema (reduce token consumption)
+	Compact bool `json:"compact,omitempty"`
 }
 
 // MCPToolsCallRequest 工具调用请求参数 / Tools call request params

@@ -415,6 +415,15 @@ func (s *SSETransportServer) handleInitialize(req types.MCPRequest) interface{} 
 
 // handleToolsList 处理工具列表请求 / Handle tools list request
 func (s *SSETransportServer) handleToolsList(req types.MCPRequest) interface{} {
+	// 解析请求参数 / Parse request params
+	var listReq types.MCPToolsListRequest
+	if req.Params != nil {
+		paramsJSON, err := json.Marshal(req.Params)
+		if err == nil {
+			_ = json.Unmarshal(paramsJSON, &listReq)
+		}
+	}
+
 	// 从工具注册表获取所有工具 / Get all tools from registry
 	registeredTools := s.toolRegistry.ListTools()
 
@@ -425,10 +434,23 @@ func (s *SSETransportServer) handleToolsList(req types.MCPRequest) interface{} {
 			"description": tool.Description,
 		}
 		if tool.InputSchema != nil {
-			toolMap["inputSchema"] = tool.InputSchema
+			// 如果请求精简模式，则精简schema / If compact mode requested, simplify schema
+			if listReq.Compact {
+				if schema, ok := tool.InputSchema.(types.JSONSchema); ok {
+					toolMap["inputSchema"] = types.SimplifySchema(schema)
+				} else {
+					toolMap["inputSchema"] = tool.InputSchema
+				}
+			} else {
+				toolMap["inputSchema"] = tool.InputSchema
+			}
 		}
 		tools = append(tools, toolMap)
 	}
+
+	s.logger.Info("tools list request",
+		zap.Int("tool_count", len(tools)),
+		zap.Bool("compact", listReq.Compact))
 
 	return map[string]interface{}{
 		"tools": tools,

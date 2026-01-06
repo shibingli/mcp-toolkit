@@ -725,3 +725,147 @@ func GetToolSchema(toolName string) JSONSchema {
 		Required:   []string{},
 	}
 }
+
+// SimplifyDescription 精简描述文本，去掉冗余信息 / Simplify description text by removing redundant information
+// 策略：
+// 1. 提取第一句话作为核心描述
+// 2. 去掉关键词列表（Keywords: ...）
+// 3. 去掉详细的使用场景列表
+// 4. 去掉中英文双语中的一种（保留英文）
+func SimplifyDescription(desc string) string {
+	if desc == "" {
+		return ""
+	}
+
+	// 去掉 "Keywords:" 之后的所有内容
+	if idx := findKeywordsIndex(desc); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉 "Use this tool when you need to:" 之后的详细列表
+	if idx := findIndex(desc, "Use this tool when you need to:"); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉 "Use for" 之后的详细列表
+	if idx := findIndex(desc, "Use for"); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉 "Common uses:" 之后的详细列表
+	if idx := findIndex(desc, "Common uses:"); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉 "IMPORTANT:" 之后的内容
+	if idx := findIndex(desc, "IMPORTANT:"); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉 "Examples:" 之后的内容
+	if idx := findIndex(desc, "Examples:"); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉中文部分（通常在 " / " 之后）
+	if idx := findIndex(desc, " / "); idx != -1 {
+		desc = desc[:idx]
+	}
+
+	// 去掉首尾空格
+	desc = trimSpace(desc)
+
+	// 如果描述太长，只保留前150个字符
+	if len(desc) > 150 {
+		desc = desc[:150] + "..."
+	}
+
+	return desc
+}
+
+// SimplifyProperty 精简属性定义 / Simplify property definition
+// 去掉验证字段和多余的示例，只保留核心信息
+func SimplifyProperty(prop Property) Property {
+	return Property{
+		Type:        prop.Type,
+		Description: SimplifyDescription(prop.Description),
+		Items:       simplifyItems(prop.Items),
+		Enum:        prop.Enum,
+		Default:     prop.Default,
+		// 去掉以下字段以减少token消耗：
+		// - Minimum, Maximum, MinLength, MaxLength, Pattern, Format
+		// - Examples (或只保留第一个)
+		// - Nullable
+	}
+}
+
+// SimplifySchema 精简JSON Schema / Simplify JSON Schema
+// 用于大模型工具调用，减少token消耗
+func SimplifySchema(schema JSONSchema) JSONSchema {
+	simplifiedProps := make(map[string]Property, len(schema.Properties))
+	for name, prop := range schema.Properties {
+		simplifiedProps[name] = SimplifyProperty(prop)
+	}
+
+	return JSONSchema{
+		Type:        schema.Type,
+		Description: SimplifyDescription(schema.Description),
+		Properties:  simplifiedProps,
+		Required:    schema.Required,
+		// 去掉 AdditionalProperties 字段
+	}
+}
+
+// simplifyItems 精简数组项定义 / Simplify array items definition
+func simplifyItems(items *Items) *Items {
+	if items == nil {
+		return nil
+	}
+	return &Items{
+		Type:        items.Type,
+		Description: SimplifyDescription(items.Description),
+		Enum:        items.Enum,
+	}
+}
+
+// findKeywordsIndex 查找 "Keywords:" 的位置 / Find index of "Keywords:"
+func findKeywordsIndex(s string) int {
+	patterns := []string{"Keywords:", "关键词：", "关键词:"}
+	for _, pattern := range patterns {
+		if idx := findIndex(s, pattern); idx != -1 {
+			return idx
+		}
+	}
+	return -1
+}
+
+// findIndex 查找子字符串的位置 / Find index of substring
+func findIndex(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}
+
+// trimSpace 去掉首尾空格 / Trim spaces
+func trimSpace(s string) string {
+	// 去掉首尾空格
+	start := 0
+	end := len(s)
+
+	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r') {
+		start++
+	}
+
+	for end > start && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n' || s[end-1] == '\r') {
+		end--
+	}
+
+	if start >= end {
+		return ""
+	}
+
+	return s[start:end]
+}
